@@ -1,0 +1,56 @@
+[
+  {
+    "path": "/Users/veronicasun/Downloads/QIS/QIS_Spot_Perpetual_Codex_Prompt.txt",
+    "bytes": 64907,
+    "sha256": "0b186f9f6d511d8f803d3e3abab5b5512e62a51a439002644f08d39d48ebf7a4",
+    "review_scope": "full guide/prompt"
+  },
+  {
+    "path": "/Users/veronicasun/Downloads/QIS/Spot_Perpetual_Project_Guide.pdf",
+    "bytes": 410931,
+    "sha256": "c226921245ab683a4c763a076c1ce08e5b0fa8e215aa00da9c704db2989ad291",
+    "review_scope": "full guide/prompt"
+  },
+  {
+    "path": "/Users/veronicasun/Downloads/QIS/Spot_Perp_Reading_Guide.docx",
+    "bytes": 50167,
+    "sha256": "64af2376861083704a4a22178a2522e688e065407308d8d0a273fe84345d6a75",
+    "review_scope": "full guide/prompt"
+  },
+  {
+    "path": "/Users/veronicasun/Downloads/QIS/Fundamental of Perpetuals.pdf",
+    "bytes": 6330266,
+    "sha256": "f4d5c677d267f52b1bb33e70a3dbfbc4440deda0b2edfc257475450964aa487b",
+    "review_scope": "title/version/abstract and relevance; not a full replication"
+  },
+  {
+    "path": "/Users/veronicasun/Downloads/QIS/crypto carry.pdf",
+    "bytes": 574892,
+    "sha256": "cd7d395e06a2edc3ac1da196f15603a44ed487ed8723b16e2cf1094fadd20639",
+    "review_scope": "title/version/abstract and relevance; not a full replication"
+  },
+  {
+    "path": "/Users/veronicasun/Downloads/QIS/Trading and Arbitrage in Cryptocurrency Markets.pdf",
+    "bytes": 105797,
+    "sha256": "7772cf5156037ddbfdd37a08dc5ee78f366990c4bbc3c5cf48906a19aea6a770",
+    "review_scope": "title/version/abstract and relevance; not a full replication"
+  },
+  {
+    "path": "/Users/veronicasun/Downloads/QIS/trading-and-arbitrage-in-crypto-markets.pdf",
+    "bytes": 1758422,
+    "sha256": "d992ac3cb39fb0c87fb2c471b7f58f6c383c4c571f669d0b91774330599d6ccd",
+    "review_scope": "title/version/abstract and relevance; not a full replication"
+  },
+  {
+    "path": "/Users/veronicasun/Downloads/QIS/price impact of order books.pdf",
+    "bytes": 741640,
+    "sha256": "40d1d5f0baf7944a1b9f4c12d3644038e657acf4a3dfb500b2057c2269edd25f",
+    "review_scope": "title/version/abstract and relevance; not a full replication"
+  },
+  {
+    "path": "/Users/veronicasun/Downloads/QIS/Optimal Mean Reversion Trading.pdf",
+    "bytes": 358680,
+    "sha256": "97372fc36beba1f8c645ac2df1c7beb4fec544ebf7dd648775f10f29e1799c71",
+    "review_scope": "title/version/abstract and relevance; not a full replication"
+  }
+]

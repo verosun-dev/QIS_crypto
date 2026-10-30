@@ -1,0 +1,23 @@
+test_arrival_uses_changed_quote (test_research.ResearchTests.test_arrival_uses_changed_quote) ... ok
+test_book_absolute_delete_and_gap_recovery (test_research.ResearchTests.test_book_absolute_delete_and_gap_recovery) ... ok
+test_contract_multiplier (test_research.ResearchTests.test_contract_multiplier) ... ok
+test_distinct_trade_ids_at_same_timestamp_retained (test_research.ResearchTests.test_distinct_trade_ids_at_same_timestamp_retained) ... ok
+test_end_position_is_reported (test_research.ResearchTests.test_end_position_is_reported) ... ok
+test_funding_not_used_as_predictor (test_research.ResearchTests.test_funding_not_used_as_predictor) ... ok
+test_funding_sign_and_actual_quantity (test_research.ResearchTests.test_funding_sign_and_actual_quantity) ... ok
+test_future_data_does_not_change_features (test_research.ResearchTests.test_future_data_does_not_change_features) ... ok
+test_heartbeat_duplicate_and_reset (test_research.ResearchTests.test_heartbeat_duplicate_and_reset) ... ok
+test_latency_report_and_holding (test_research.ResearchTests.test_latency_report_and_holding) ... ok
+test_missing_feature_window_blocks_warmup (test_research.ResearchTests.test_missing_feature_window_blocks_warmup) ... ok
+test_missing_sequence_not_verified (test_research.ResearchTests.test_missing_sequence_not_verified) ... ok
+test_partial_recovery_preserves_costs (test_research.ResearchTests.test_partial_recovery_preserves_costs) ... ok
+test_pressure_and_purge (test_research.ResearchTests.test_pressure_and_purge) ... ok
+test_static_market_fees_not_double_spread (test_research.ResearchTests.test_static_market_fees_not_double_spread) ... ok
+test_teaching_pnl (test_research.ResearchTests.test_teaching_pnl) ... ok
+test_utc8_file_boundary (test_research.ResearchTests.test_utc8_file_boundary) ... ok
+test_vwap_and_partial (test_research.ResearchTests.test_vwap_and_partial) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.012s
+
+OK

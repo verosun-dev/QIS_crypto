@@ -1,0 +1,38 @@
+{
+  "data_kind": "SYNTHETIC_TEACHING_ONLY",
+  "status": "COMPLETED_DEBUG",
+  "closed_trades": 1,
+  "episodes": 1,
+  "orders": 4,
+  "fills": 4,
+  "gross_fill_usdt": "-0.020000",
+  "fees_usdt": "3.003015",
+  "funding_usdt": "0",
+  "closed_net_usdt": "-3.023015",
+  "return_on_total_capital": "-0.0015115075",
+  "win_rate": 0.0,
+  "worst_trade_usdt": "-3.023015",
+  "max_drawdown_usdt": "3.023015",
+  "end_positions": {
+    "spot": "0.00",
+    "perp": "0.00"
+  },
+  "pending_orders": [],
+  "end_state": "FLAT",
+  "rejections": {
+    "invalid_or_stale_decision": 1,
+    "warmup_incomplete": 1
+  },
+  "book_health": {
+    "ok": 200
+  },
+  "limitations": [
+    "2-hour debug; shortened warmup",
+    "No archive sequence IDs or local receipt timestamps",
+    "Illustrative fees and latency; quote-currency fee assumption",
+    "Current metadata, historical rule equivalence unverified",
+    "No margin liquidation model; cannot validate leveraged safety",
+    "Funding crossings blocked absent settlement reference price",
+    "No out-of-sample or profitability conclusion"
+  ]
+}

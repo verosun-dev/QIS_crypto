@@ -1,0 +1,5 @@
+order_id,episode_id,leg,side,quantity_btc,send_ms,arrival_ms,report_ms,reason,status,unfilled_btc
+1,1,spot,buy,0.01,3000,3150,3250,entry,FILLED,0.00
+2,1,perp,sell,0.01,3000,3150,3250,entry,FILLED,0.00
+3,1,spot,sell,0.01,5150,5300,5400,holding,FILLED,0.00
+4,1,perp,buy,0.01,5150,5300,5400,holding,FILLED,0.00

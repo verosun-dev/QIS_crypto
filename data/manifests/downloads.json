@@ -1,0 +1,74 @@
+{
+  "checked_client_date": "2026-10-30",
+  "files": [
+    {
+      "dateTs": "1792713600000",
+      "filename": "BTC-USDT-L2orderbook-400lv-2026-10-23.tar.gz",
+      "sizeMB": "116.93",
+      "url": "https://static.okx.com/cdn/okx/match/orderbook/pro/L2/400lv/daily/20261023/BTC-USDT-L2orderbook-400lv-2026-10-23.tar.gz",
+      "local_path": "data/raw/BTC-USDT-L2orderbook-400lv-2026-10-23.tar.gz",
+      "local_file_completed_utc": "2026-10-30T04:27:24.446730+00:00",
+      "bytes": 122609301,
+      "sha256": "895c9a04abaa62c40a1cb3a568360004d353902ff1a16d77ea452ac6cd36bd10",
+      "retrieval_manifest": "data/manifests/okx-spot-books.json"
+    },
+    {
+      "dateTs": "1792771200000",
+      "filename": "BTC-USDT-trades-2026-10-24.zip",
+      "sizeMB": "2.66",
+      "url": "https://static.okx.com/cdn/okex/traderecords/trades/daily/20261024/BTC-USDT-trades-2026-10-24.zip?v=1001",
+      "local_path": "data/raw/BTC-USDT-trades-2026-10-24.zip",
+      "local_file_completed_utc": "2026-10-30T04:27:06.272850+00:00",
+      "bytes": 2789300,
+      "sha256": "9de863b9dfa3a71bd9af1f2e8dde4b975cff22db740a36563b059f7298cf458f",
+      "retrieval_manifest": "data/manifests/okx-spot-trades.json"
+    },
+    {
+      "dateTs": "1792684800000",
+      "filename": "BTC-USDT-trades-2026-10-23.zip",
+      "sizeMB": "2.91",
+      "url": "https://static.okx.com/cdn/okex/traderecords/trades/daily/20261023/BTC-USDT-trades-2026-10-23.zip?v=1001",
+      "local_path": "data/raw/BTC-USDT-trades-2026-10-23.zip",
+      "local_file_completed_utc": "2026-10-30T04:27:07.990029+00:00",
+      "bytes": 3049183,
+      "sha256": "ce11bf0415fb8d1340760973c54b93501969ef18e744c074d2c84401671b7f3c",
+      "retrieval_manifest": "data/manifests/okx-spot-trades.json"
+    },
+    {
+      "dateTs": "1792713600000",
+      "filename": "BTC-USDT-SWAP-L2orderbook-400lv-2026-10-23.tar.gz",
+      "sizeMB": "432.09",
+      "url": "https://static.okx.com/cdn/okx/match/orderbook/pro/L2/400lv/daily/20261023/BTC-USDT-SWAP-L2orderbook-400lv-2026-10-23.tar.gz",
+      "local_path": "data/raw/BTC-USDT-SWAP-L2orderbook-400lv-2026-10-23.tar.gz",
+      "local_file_completed_utc": "2026-10-30T04:28:23.872229+00:00",
+      "bytes": 453080537,
+      "sha256": "7696a8b7b6948932f501c99dcae6c16afe73cca628883cd5c7aae17be1a5a93b",
+      "retrieval_manifest": "data/manifests/okx-swap-books.json"
+    },
+    {
+      "dateTs": "1792771200000",
+      "filename": "BTC-USDT-SWAP-trades-2026-10-24.zip",
+      "sizeMB": "11.23",
+      "url": "https://static.okx.com/cdn/okex/traderecords/trades/daily/20261024/BTC-USDT-SWAP-trades-2026-10-24.zip?v=1001",
+      "local_path": "data/raw/BTC-USDT-SWAP-trades-2026-10-24.zip",
+      "local_file_completed_utc": "2026-10-30T04:27:04.030294+00:00",
+      "bytes": 11779207,
+      "sha256": "73c8dc422525f5a46c7aafa8e089e4ccae613a1701dd9f3949b898ea33cf51ba",
+      "retrieval_manifest": "data/manifests/okx-swap-trades.json"
+    },
+    {
+      "dateTs": "1792684800000",
+      "filename": "BTC-USDT-SWAP-trades-2026-10-23.zip",
+      "sizeMB": "12.35",
+      "url": "https://static.okx.com/cdn/okex/traderecords/trades/daily/20261023/BTC-USDT-SWAP-trades-2026-10-23.zip?v=1001",
+      "local_path": "data/raw/BTC-USDT-SWAP-trades-2026-10-23.zip",
+      "local_file_completed_utc": "2026-10-30T04:27:06.272307+00:00",
+      "bytes": 12951114,
+      "sha256": "1b3160a454510022253864a8cd31d9d13b7e1eed11c3e250d8e34deef139c2a6",
+      "retrieval_manifest": "data/manifests/okx-swap-trades.json"
+    }
+  ],
+  "hash_note": "local SHA256 fingerprint; not an exchange-published checksum",
+  "download_tool": "curl --fail --max-time 180 --max-filesize 500000000",
+  "total_bytes": 606258642
+}

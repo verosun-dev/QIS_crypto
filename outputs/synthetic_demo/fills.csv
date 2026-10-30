@@ -1,0 +1,5 @@
+order_id,episode_id,leg,side,quantity_btc,price,fee_usdt,fee_bps,fill_ms,report_ms
+1,1,spot,buy,0.01,100001,1.00001,10,3150,3250
+2,1,perp,sell,0.01,100300,0.5015,5,3150,3250
+3,1,spot,sell,0.01,100000,1.00,10,5300,5400
+4,1,perp,buy,0.01,100301,0.501505,5,5300,5400

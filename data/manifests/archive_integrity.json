@@ -1,0 +1,32 @@
+[
+  {
+    "file": "BTC-USDT-L2orderbook-400lv-2026-10-23.tar.gz",
+    "uncompressed_tar_bytes": 828506112,
+    "compression_crc": "passed"
+  },
+  {
+    "file": "BTC-USDT-SWAP-L2orderbook-400lv-2026-10-23.tar.gz",
+    "uncompressed_tar_bytes": 2900361216,
+    "compression_crc": "passed"
+  },
+  {
+    "file": "BTC-USDT-SWAP-trades-2026-10-23.zip",
+    "uncompressed_bytes": 134353304,
+    "compression_crc": "passed"
+  },
+  {
+    "file": "BTC-USDT-SWAP-trades-2026-10-24.zip",
+    "uncompressed_bytes": 119744771,
+    "compression_crc": "passed"
+  },
+  {
+    "file": "BTC-USDT-trades-2026-10-23.zip",
+    "uncompressed_bytes": 20468173,
+    "compression_crc": "passed"
+  },
+  {
+    "file": "BTC-USDT-trades-2026-10-24.zip",
+    "uncompressed_bytes": 17798753,
+    "compression_crc": "passed"
+  }
+]

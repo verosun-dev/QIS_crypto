@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qis-spot-perp"
+version = "0.1.0"
+description = "Auditable spot-perpetual research, no trading connectivity"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+qis = "qis_spot_perp.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

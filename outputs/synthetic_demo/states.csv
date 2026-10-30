@@ -1,0 +1,5 @@
+ts,state,reason,spot_known,perp_known
+3000,ENTERING,v0,0,0
+3250,HEDGED,both_reports_received,0.01,-0.01
+5150,EXITING,holding,0.01,-0.01
+5400,FLAT,closed,0.00,0.00

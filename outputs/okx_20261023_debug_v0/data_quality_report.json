@@ -1,0 +1,64 @@
+{
+  "spot": {
+    "rows": 355299,
+    "snapshots": 8,
+    "missing_sequence": 355299,
+    "timestamp_regressions": 0,
+    "max_intermessage_gap_ms": 960,
+    "first_ms": 1792713600002,
+    "last_ms": 1792720799997,
+    "scope": "requested prefix only",
+    "source_file": "/Users/veronicasun/Documents/ChatGPT/QIS crypto/data/raw/BTC-USDT-L2orderbook-400lv-2026-10-23.tar.gz"
+  },
+  "perp": {
+    "rows": 619418,
+    "snapshots": 8,
+    "missing_sequence": 619418,
+    "timestamp_regressions": 0,
+    "max_intermessage_gap_ms": 453,
+    "first_ms": 1792713600002,
+    "last_ms": 1792720799997,
+    "scope": "requested prefix only",
+    "source_file": "/Users/veronicasun/Documents/ChatGPT/QIS crypto/data/raw/BTC-USDT-SWAP-L2orderbook-400lv-2026-10-23.tar.gz"
+  },
+  "trades": {
+    "spot": {
+      "rows": 35678,
+      "duplicates": 0,
+      "outside_target": 310599,
+      "first_ms": 1792713600092,
+      "last_ms": 1792720799881,
+      "source_counts": {
+        "0": 35427,
+        "1": 251
+      },
+      "unknown_side": 0
+    },
+    "perp": {
+      "rows": 227138,
+      "duplicates": 0,
+      "outside_target": 2032887,
+      "first_ms": 1792713600016,
+      "last_ms": 1792720799991,
+      "source_counts": {
+        "0": 226503,
+        "1": 635
+      },
+      "unknown_side": 0
+    }
+  },
+  "sequence_integrity": "UNVERIFIABLE: seqId/prevSeqId absent in source archive",
+  "receiver_latency": "missing: scenarios only",
+  "processed_window_utc": [
+    "2026-10-23T00:00:00+00:00",
+    "2026-10-23T02:00:00+00:00"
+  ],
+  "unprocessed_remainder": "Raw full-day books downloaded; remainder not inspected in this experiment",
+  "decision_rejections": {
+    "invalid_or_stale_decision": 1,
+    "nonpositive_basis": 2999
+  },
+  "book_update_status": {
+    "unverified_sequence": 974717
+  }
+}

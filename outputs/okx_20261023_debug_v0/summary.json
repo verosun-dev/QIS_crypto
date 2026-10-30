@@ -1,0 +1,38 @@
+{
+  "data_kind": "real_archive_exchange_time_replay",
+  "status": "COMPLETED_DEBUG",
+  "closed_trades": 0,
+  "episodes": 0,
+  "orders": 0,
+  "fills": 0,
+  "gross_fill_usdt": "0",
+  "fees_usdt": "0",
+  "funding_usdt": "0",
+  "closed_net_usdt": "0",
+  "return_on_total_capital": "0",
+  "win_rate": null,
+  "worst_trade_usdt": null,
+  "max_drawdown_usdt": "0",
+  "end_positions": {
+    "spot": "0",
+    "perp": "0"
+  },
+  "pending_orders": [],
+  "end_state": "FLAT",
+  "rejections": {
+    "invalid_or_stale_decision": 1,
+    "nonpositive_basis": 2999
+  },
+  "book_health": {
+    "unverified_sequence": 974717
+  },
+  "limitations": [
+    "2-hour debug; shortened warmup",
+    "No archive sequence IDs or local receipt timestamps",
+    "Illustrative fees and latency; quote-currency fee assumption",
+    "Current metadata, historical rule equivalence unverified",
+    "No margin liquidation model; cannot validate leveraged safety",
+    "Funding crossings blocked absent settlement reference price",
+    "No out-of-sample or profitability conclusion"
+  ]
+}

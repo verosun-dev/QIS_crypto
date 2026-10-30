@@ -1,0 +1,3 @@
+# Optional plotting / bounded public collector only. Core replay and tests use stdlib.
+matplotlib==3.10.8
+websocket-client==1.9.0
