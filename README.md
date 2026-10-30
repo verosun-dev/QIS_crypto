@@ -1,29 +1,39 @@
-# QIS Spot–Perpetual 研究起步版
+# QIS Spot–Perpetual Research
 
-研究问题：同一资产永续异常正溢价时，买现货、空等量线性永续，之后的价差收敛能否覆盖成本？本项目目前没有盈利证据。
+We study whether an unusually positive perpetual premium predicts enough subsequent convergence to cover the costs of buying spot and shorting an equal BTC quantity of a linear perpetual. **No profitable edge has been established.**
 
-首轮已取得OKX真实免费样本，并完成**两小时工程调试**。2026-10-23 00:00–02:00 UTC的每秒basis全部为负，因此规定方向的V0没有开仓。零交易不是策略赚钱或亏钱的证据。原Project Guide的图和示例是合成教学材料，与本工程真实数据报告分开。
+The first run downloaded free public OKX archives and completed a **two-hour engineering debug**. Every sampled basis observation from 23 October 2026, 00:00–02:00 UTC was negative, so the positive-basis V0 rule opened no positions. This is a valid no-trade result, not evidence of profitability or unprofitability. Synthetic examples remain separate from real-data outputs.
 
-## 先从这里读
+## Start here
 
-1. [项目易懂解读](docs/project_explained.md)：为什么两条价格都上涨还能赚价差；+2毛利润为何在示意费用下变成−1.017 USDT。
-2. [19项阅读导览](docs/reading_map.md)：每项重点、能做什么和四组最短路线。
-3. [四组执行指南](docs/team_workstreams.md)：数据怎么买/下载、L1/L2、模型、回测与成本工作接口。
-4. [本轮结果](docs/first_run_results.md)、[真实运行摘要](outputs/okx_20261023_debug_v0/summary.json)、[基差图](outputs/okx_20261023_debug_v0/basis.png)。
+1. [Project explained](docs/project_explained.md): the trade, cash flows, and how a +2 USDT gross example becomes −1.017 USDT after illustrative fees.
+2. [Reading map](docs/reading_map.md): all 19 readings, what to focus on, and the shortest route for each workstream.
+3. [Workstream guide](docs/team_workstreams.md): data acquisition, granularity, signals, backtesting, execution, and shared deliverables.
+4. [First-run results](docs/first_run_results.md), [machine-readable summary](outputs/okx_20261023_debug_v0/summary.json), and [basis chart](outputs/okx_20261023_debug_v0/basis.png).
+5. [Baseline review](docs/baseline_review.md): the English review of the proposed V0.1 specification, including decisions still needed before implementation.
 
-## 最短运行命令
+The [implemented debug specification](docs/baseline_spec.md) describes the current code. The proposed one-week V0.1 experiment is **not implemented or completed** by this documentation update.
 
-在本目录执行。核心仅用Python标准库，无需安装第三方包。本轮验证环境Python3.14.2；项目支持Python3.10以上，其他版本尚未逐一测试。
+## Run locally
+
+Run from the repository root. The core uses only the Python standard library; no third-party installation is required. The recorded run used Python 3.14.2. Package metadata requires Python 3.10 or newer; other versions have not all been tested.
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 PYTHONPATH=src python3 scripts/synthetic_demo.py
+```
+
+With the raw archives downloaded, replay the real sample:
+
+```bash
 PYTHONPATH=src python3 -m qis_spot_perp.cli run --config configs/debug.json
 ```
 
-最后一条重放真实样本，读取已下载的原始文件；每次运行会追加实验登记。outputs/synthetic_demo全部为**合成测试**，真实样本只在outputs/okx_20261023_debug_v0。
+Each replay appends an experiment record. `outputs/synthetic_demo` contains **synthetic tests only**. The real-data debug run is under `outputs/okx_20261023_debug_v0`.
 
-其他机器复现时先列清单、再有界下载：
+## Obtain the sample
+
+List the files and sizes before downloading:
 
 ```bash
 python3 scripts/fetch_sample.py --date 2026-10-23
@@ -33,38 +43,49 @@ PYTHONPATH=src python3 -m qis_spot_perp.cli manifest
 PYTHONPATH=src python3 -m qis_spot_perp.cli run --config configs/debug.json
 ```
 
-无需API密钥。下载仅支持这一对合约的单日研究请求；更长时间逐日运行前先保留对应日期manifest，当前固定名字会更新元数据。原始文件保留，已有文件不自动覆盖，下载失败保留.part供排查。若需要全24小时lookback，需要额外前一天，不可直接把debug改称正式评估。
+No API key is needed for these public requests. The six downloaded archives total 606,258,642 bytes. Raw files are excluded from Git; the repository includes download scripts, manifests, checksums, and small reports. Coverage must still be checked when rerunning against the provider.
 
-可选静态图：`MPLCONFIGDIR=tmp/matplotlib python3 scripts/plot_debug.py`。可选依赖见requirements-optional.txt，核心计算不需要它们。
+The downloader handles one UTC research day for this pair. It includes adjacent trade-file dates where required by UTC+8 archive boundaries. Preserve date-specific manifests before extending acquisition: current metadata filenames are reused. Existing archives are retained, and failed downloads leave `.part` files for inspection. The replay currently reads one book archive per leg; a multi-day replay requires implementation work, not just a longer date range in the configuration.
 
-实时采集程序已准备，但本轮**未联网验证**。在确认当前地区适用的官方public WS URL后：
+A 24-hour lookback needs preceding-day data and correct continuity across midnight. Do not relabel the shortened debug warm-up as a full evaluation.
+
+## Optional chart and bounded collection
+
+Optional dependencies are pinned in [requirements-optional.txt](requirements-optional.txt). Install them only for plotting or public WebSocket capture:
+
+```bash
+python3 -m pip install -r requirements-optional.txt
+MPLCONFIGDIR=tmp/matplotlib python3 scripts/plot_debug.py
+```
+
+The collector is implemented but was **not network-tested in the first run**. Confirm the current official public WebSocket endpoint for the applicable region before using this candidate command:
 
 ```bash
 python3 scripts/collect_public.py --url 'wss://ws.okx.com:8443/ws/v5/public' --seconds 30 --max-mb 25 --output data/raw/live-public.jsonl
 ```
 
-URL是待核验候选，不能用更换域名绕过访问限制。程序只订阅books/trades，默认30秒，最多300秒/100MB，文件不能覆盖，断线记录并停止。下一次须重新取得snapshot。没有常驻后台或交易权限。
+It subscribes only to `books` and `trades`, defaults to 30 seconds, and limits configuration to 300 seconds and 100 MB. It refuses to overwrite an output file, records disconnections, and stops. A new run must obtain a new snapshot. It has no trading permissions or persistent background service. Do not change endpoints to bypass access restrictions.
 
-## 工程入口
+## Code and specifications
 
-| 模块 | 作用 |
+| File | Responsibility |
 |---|---|
-| src/qis_spot_perp/data.py | 流式档案、UTC边界、成交去重、pressure、SHA256 |
-| book.py | Decimal L2绝对数量更新、序列/恢复、小额IOC深度撮合 |
-| features.py | 因果滚动basis、momentum、TP和时间purge基础函数 |
-| replay.py | exchange/observed/reported状态、订单延迟、部分成交恢复 |
-| accounting.py | 实际fill现金流、库存、逐笔费和funding方向 |
-| configs/debug.json | 所有调试参数和适用边界 |
-| tests/test_research.py | 手算、时间、序列、延迟、部分成交和数据边界测试 |
+| `src/qis_spot_perp/data.py` | Streaming archives, UTC boundaries, trade-ID deduplication, pressure, SHA256 |
+| `src/qis_spot_perp/book.py` | Decimal L2 reconstruction, sequence handling, visible-depth IOC matching |
+| `src/qis_spot_perp/features.py` | Causal rolling basis, momentum, trade pressure, basic timestamp purge |
+| `src/qis_spot_perp/replay.py` | Exchange, observed, and reported states; latency; partial-fill recovery |
+| `src/qis_spot_perp/accounting.py` | Fill cash flows, inventory, per-fill fees, funding direction |
+| `configs/debug.json` | Debug parameters and limitations |
+| `tests/test_research.py` | Hand calculations, sequencing, timing, latency, partial fills, data boundaries |
 
-详细规格见[baseline_spec](docs/baseline_spec.md)、[instrument_spec](docs/instrument_spec.md)、[data_dictionary](docs/data_dictionary.md)。下载来源、大小、SHA256在data/manifests/downloads.json；每次运行参数与代码指纹在outputs/experiment_register.jsonl。
+See the [baseline specification](docs/baseline_spec.md), [instrument specification](docs/instrument_spec.md), and [data dictionary](docs/data_dictionary.md). Download URLs, sizes, and SHA256 fingerprints are in `data/manifests/downloads.json`. Recorded commands, parameters, and source fingerprints are in `outputs/experiment_register.jsonl`.
 
-## 当前不能说明什么
+## What the current results cannot establish
 
-- 下载了全天盘口，但只解析前两小时，30分钟暖机是调试设置。没有最终样本外测试。
-- 档案无seqId/prevSeqId或本机接收时间；流式解压成功不等于市场数据无漏包。
-- 费用是教学情景，延迟是配置假设，历史账户费率/规则未完整核验。
-- 资金费参考价格缺失，因此跨结算点交易受限。无保证金清算、maker排队或市场冲击反馈验证。
-- 真实样本零交易，所以成本模型在本轮真实数据中尚未经历实际开平仓；合成测试只支持代码核对。
+- Full-day archives were downloaded, but only the first two hours of books were parsed. The 30-minute warm-up is a debug choice. No final out-of-sample test exists.
+- The archives lack `seqId`/`prevSeqId` and local receipt timestamps. Successful decompression does not establish market-message completeness.
+- Fees and latency are scenarios. Historical account fees and contract rules have not been fully verified.
+- Missing funding reference prices restrict settlement-crossing trades. There is no validated liquidation, maker queue, or market-response model.
+- With no real-sample trades, the execution and cost model has not been exercised through real-sample entries and exits. Synthetic tests establish limited code properties only.
 
-下一步优先扩展连续日期、补24小时暖机，并采集带接收时间和序列的原始消息，再评估是否存在足够多的正溢价episode。不要为制造交易去掉正basis条件、修改费率或事后挑日期。
+The next research step is to extend a predetermined continuous window, add a full 24-hour warm-up, and obtain sequence and receipt-time evidence. Do not remove the positive-basis rule or select favorable dates simply to manufacture trades.

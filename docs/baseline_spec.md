@@ -1,23 +1,43 @@
-# V0 调试规格与尚未验证部分
+# Implemented V0 debug specification
 
-唯一参数源为 `configs/debug.json`。本轮处理 2026-10-23 00:00–02:00 UTC；00:00–00:30 用于暖机；00:30:01–01:20 允许入场；其后保留固定持有期和退出缓冲。过去窗口缺一秒也不满暖机。最终测试集尚未建立。
+The parameter source is `configs/debug.json`. This document describes the implemented two-hour debug, not the proposed one-week V0.1 experiment. The run covers 23 October 2026, 00:00–02:00 UTC. Warm-up starts at 00:00; entry decisions are allowed from 00:30:01 up to, but not including, 01:20. The remaining data supplies holding and exit buffers. The current warm-up requires a complete preceding one-second grid; even one missing observation prevents readiness. No final test set has been established.
 
-信号每秒计算，使用已到达 observed_state 的最新双腿盘口。原始盘口逐条回放，并非把每秒特征当作成交行情。交易所状态独立用于 IOC 撮合；模拟 feed 100 ms、order 150 ms、report 100 ms；这些是假设，不是实测。相同时间戳的全部交易所更新先于订单，跨通道真实顺序不可知。
+## Information and event timing
 
-入场：正 basis，过去 1800 秒（不含当前点）的中位数偏离 ≥2 bps。固定 q=0.01 BTC，现货买、永续卖。允许一对仓位；持续偏离视为一个 episode，excess 回到 ≤0 才可重新触发。特征和订单状态独立，未收到双腿回报前保持 ENTERING。
+Signals are calculated every second using only books that have reached `observed_state`. Original archive events are replayed individually; the feature grid is not treated as the execution feed. Exchange state independently determines IOC fills.
 
-完整状态：FLAT → ENTERING → HEDGED → EXITING；任意一腿部分成交进入 RECOVERY，撤回已成交敞口。IOC 未成交余量立即取消，无 maker 队列假设。配平实际 fill 时刻开始计 30 分钟，策略在回报到达后才知道该时刻。恢复每秒尝试一次；10 秒仍未平则停止新仓并保留未平仓报告。最大已知单笔浮亏阈值 10 USDT，仅是调试风险限额。
+Assumed feed, order, and report latency is 100, 150, and 100 ms, respectively. These are scenarios, not measurements. All exchange updates sharing a timestamp precede order arrivals at that timestamp. The actual order of simultaneous cross-channel events is unknown.
 
-无效/过期行情阻止新仓。持仓遇到无效 observed feed 会发退出意图；交易所没有有效报价就拒单而非虚构平仓。数据结束不强制用最后价格免费平仓，输出残余数量和 pending 状态。盘口异常与序列断裂不同；档案无 seq 字段时必须标为未知。本轮显式允许这种受限研究，关闭配置中的 `allow_unsequenced_archive` 就会拒绝无序列数据。
+## Entry, exit, and recovery
 
-成交价格用原始时点可见深度逐档扫描，数量不足则部分成交。一次撮合会消耗模拟流动性；后续历史绝对数量更新可能重新补充，但模型没有市场对我们订单的反应。订单限制在很小的尺寸。本轮没有实现 maker、动态冲击、真实账户费用币种或保证金清算模型。
+Entry requires a positive basis and excess of at least 2 bps above the median of the preceding 1,800 seconds, excluding the current point. Buy 0.01 BTC spot and short 0.01 BTC-equivalent perpetual exposure. Allow one paired position, with no pyramiding. A new episode can be armed after excess returns to zero or below. Order state remains `ENTERING` until both execution reports arrive.
 
-费用为每个 fill 的实际数量×价格×费率。现货10 bps、永续5 bps只是情景，统一记 USDT；不能宣称匹配真实账户或币本位扣费。实际交易需要补上历史账户规则。净收益由签名成交现金流+funding−费用与库存共同计算，不靠只保留顺利配平的交易公式。
+The main states are `FLAT`, `ENTERING`, `HEDGED`, `EXITING`, and `RECOVERY`. If either leg does not reach its target quantity, unwind executed exposure. Unfilled IOC quantities are canceled immediately; there is no maker queue model. The 30-minute holding clock starts at the last actual entry fill completing the hedge, which the strategy learns about only when reports arrive.
 
-资金费历史只取得费率与结算时刻，未取得结算参考价格。因此跨已知结算点的计划交易被阻止；若异常恢复导致意外跨点，报告现金流未知，停止新仓，禁止输出完整净收益。该限制是调试准入规则，未来不能用来有选择地改善回测。00:00–02:00 的正常持仓不会跨 08:00 结算。
+Recovery retries are scheduled one second after an unresolved recovery report, with another configured order delay before arrival. If exposure remains unresolved at the timeout check after 10 seconds, stop new entries and retain the open exposure in the report. The 10 USDT known pair-loss threshold is a debug risk setting. The code evaluates known fill cash flows and inventory at observed mids, including known fees; it then submits exit orders. The trigger is not a guaranteed maximum realized loss.
 
-总资本默认 2000 USDT。equity 是按 observed mid 标记的研究账户曲线；perp signed cash 是盈亏核对恒等式，不等于可用保证金。清算、维持保证金、划转时延、融资和平台风险尚未模拟；故不能根据此曲线判断杠杆安全。
+Invalid or stale data prevents new positions. An existing hedged position receiving an unhealthy observed feed generates an exit request. If exchange-side quotes are unavailable, orders are rejected rather than given invented fills. At the data boundary, report residual inventory and pending orders instead of closing for free at the final price.
 
-毛收益 benchmark 用两次决策时中间价；实际 fill gross 已包含方向、深度和订单延迟。execution_loss=benchmark−gross，允许负值；恢复交易的固定q benchmark混合了数量差异，只能诊断，不能称纯滑点。发生未知 funding 的报告不得使用逐笔净收益汇总作为完整结果。
+## Book quality and execution
 
-下一版优先补连续样本、真正的24小时暖机、历史规则、序列/接收时间证据，再做压力或动量的单独消融。所有尝试追加到 experiment_register，不能只存赢家。
+The archive lacks sequence IDs. `allow_unsequenced_archive=true` explicitly permits restricted research while keeping sequence verification unknown. Setting it to false rejects unsequenced input. Price validity and sequence completeness are separate checks.
+
+Scan visible depth at order arrival. Insufficient depth produces partial fills. A simulated order consumes liquidity in the simulated book; later historical absolute-size updates can replenish it. Other participants do not react to our simulated orders. This model is intended for small-size diagnostics and does not validate market impact, maker execution, historical fee currencies, or liquidation.
+
+## Accounting and capital
+
+Each fill incurs quantity × price × fee rate. The scenario uses 10 bps for spot and 5 bps for the perpetual, both booked in USDT. These are not verified account rates or verified base-currency fee rules. Net P&L comes from signed fill cash flows, inventory, fees, and funding, including recovery trades.
+
+The default total capital is 2,000 USDT. The equity series marks the research account at observed mids. Signed perpetual fill cash is an accounting identity, not available margin. Liquidation, maintenance requirements, transfer delays, financing, and venue risk are not modeled; the curve cannot establish leverage safety.
+
+The gross benchmark uses mids at entry and exit decisions. Actual fill-based gross P&L already includes bid/ask, depth, and order-delay effects. `execution_loss = gross_mid_benchmark − gross_fill` may be negative. For recovery trades, the fixed-quantity benchmark also captures quantity differences and is not pure slippage attribution.
+
+## Funding limitation
+
+Retrieved funding data contains settlement times and realized rates, but not the required settlement reference prices. Planned trades crossing a known settlement are blocked. If failed recovery causes an unexpected crossing, flag funding cash flow as unknown, stop new entries, and do not present complete net returns. Per-trade values in such an incomplete report must not be interpreted as complete net outcomes.
+
+This is a debug admission rule, not a restriction selected after observing losses. Normal holdings in the 00:00–02:00 window do not cross the 08:00 settlement.
+
+## Next implementation work
+
+Add continuous multi-day replay, a genuine 24-hour warm-up, historical rule verification, and sequence/receipt-time evidence before interpreting signal ablations. Record all attempts in the experiment register. The separate [V0.1 review](baseline_review.md) identifies proposed decisions; it does not silently change this implemented configuration.

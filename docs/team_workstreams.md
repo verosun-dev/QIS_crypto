@@ -1,47 +1,53 @@
-# 四个方向如何开始
+# How the four workstreams start
 
-所有组共享 configs、原始manifest和一套fill/account账本。两腿匹配、时间定义、费用币种有变化，要先更新公共规格，再产生新的实验ID。
+All workstreams share configurations, raw-data manifests, instrument units, and one fill/accounting ledger. Changes to unit matching, timing, or fee currencies must be reflected in the shared specification and a new experiment record.
 
-## A 数据与盘口
+## A — Data and order-book reconstruction
 
-**成交数据从哪里来，是否要买？** 本轮已经从OKX公开历史接口下载真实档案，不需要购买或API密钥。运行 `python3 scripts/fetch_sample.py --date 2026-10-23` 先查看文件和体积；加 `--download --max-mb 700` 才下载，单文件请求最长180秒。此例实际约606.3 MB（官方sizeMB更接近MiB，不能直接当十进制MB），原始解压体积超过3 GB，代码流式读取而不整体解压。更长时期先分段列清单，不能放开无限下载。
+**Where do trades come from, and must we buy data?** The first run downloaded real OKX public archives without payment or an API key. Run `python3 scripts/fetch_sample.py --date 2026-10-23` to inspect files and sizes. Add `--download --max-mb 700` to download, with a 180-second limit per file. The actual total is about 606.3 MB; the provider's `sizeMB` values are closer to MiB, so do not treat them as decimal MB. Uncompressed data exceeds 3 GB; the code streams it without extracting everything to disk. List and budget longer ranges in bounded segments.
 
-入口：[OKX历史下载](https://www.okx.com/historical-data)、[官方API](https://www.okx.com/docs-v5/en/#public-data-rest-api-get-historical-market-data)。module 1为成交、4为400档盘口；API先给下载链接。盘口按UTC日，成交按UTC+8日；一个UTC全天需两份相邻成交档案。本轮已下载23/24日的两腿成交和23日的两腿盘口，01点的一条记录要按行内UTC时间归属，而不是按文件名。
+Use the [OKX historical page](https://www.okx.com/historical-data) and [historical API documentation](https://www.okx.com/docs-v5/en/#public-data-rest-api-get-historical-market-data). Module 1 lists trades; module 4 lists 400-level books. The API returns file URLs first. Books use UTC day boundaries, while trade archives use UTC+8. One UTC day therefore requires adjacent trade-file dates. This run downloaded both legs' trade files for 23/24 October and book files for 23 October. Assign records by their timestamps, not filename alone.
 
-“每天一个文件”可以有数百万笔记录，和日K线完全不同。日线/分钟线可画概貌，不能证明亚秒成交收益。Tick是事件时间粒度；L1是最优报价和数量；L2是价格档聚合数量；L3是逐订单。当前L2档案多次更新在约10ms间隔，不等于普通实时books通道的100ms描述，也不是撮合引擎所有事件。
+A daily file can contain millions of trades; it is not a daily candle. Candles help with broad screening but cannot establish subsecond execution returns. Tick describes event granularity; L1 means best quotes and quantities; L2 means price-level aggregated quantities; L3 means individual orders. The observed historical L2 files contain many updates about 10 ms apart. This differs from the ordinary live `books` channel's described 100 ms cadence and does not imply access to every matching-engine event.
 
-筛选先看同一underlying、同一报价/结算币、两腿同期覆盖、时间质量、深度、费用和规则。BTC优先是工程默认值。可扩ETH，但不能按事后收益最高选币。Binance官方档案可做备选机制筛查；切换时两腿一起切换并重新登记，不能一条腿OKX、一条腿Binance。商业历史L2只有具体缺口无法免费解决时才讨论购买。
+Select markets by matching underlying and settlement currency, overlapping coverage, timing quality, depth, fees, and documented rules. BTC is an engineering starting choice. ETH can be a later external check; do not choose assets by retrospective profitability. Binance official archives are a possible alternative for mechanism screening, but switching sources means switching both legs and recording a new experiment. Consider paid L2 only after identifying a specific gap free sources cannot resolve.
 
-程序入口：data.py流式解压、UTC过滤、按trade_id去重；book.py按绝对数量覆盖，0删除，保留深档。历史档案没有序列字段，所以本轮无法做完整漏包证明；实时采集应保存原始消息、exchange ts、local receive UTC和到达顺序。报价长期不变要结合心跳，不能直接当断线。
+`data.py` streams archives, filters UTC intervals, and deduplicates by trade ID. `book.py` replaces absolute quantities, deletes zero-size levels, and retains deeper levels. Historical files here lack sequence IDs, so they cannot prove message completeness. Live collection should retain raw messages, exchange timestamps, local UTC receipt timestamps, and arrival order. An unchanged quote is not by itself a disconnect; inspect heartbeats and connection health.
 
-第一周产物：连续一周manifest、字段表、缺失区间、两腿时差/接收延迟、source=1特殊成交比例、sequence验证。不要向信号组输出伪造的“完整无缺口”标签。
+First-week deliverables: a continuous-week manifest, data dictionary, missing intervals, cross-leg timing and available receipt-latency evidence, `source=1` trade counts, and sequence-check results. Report unavailable evidence explicitly.
 
-## B 价差与信号
+## B — Spread analysis and signals
 
-features.py当前实现basis、过去窗口median excess和60秒momentum；pressure.csv按已完成分钟保存两腿主动成交额压力及衰减，V0尚未使用压力。
+`features.py` implements basis, excess over a trailing median, and 60-second momentum. `pressure.csv` contains both legs' completed-minute aggressive-notional pressure and its relative decay. V0 does not use pressure.
 
-入门顺序：先在开发集固定q和持有期；用少量预设期限1秒、10秒、1分钟、5分钟、30分钟做事件路径研究；比较相同起始excess区间里，压力增强/衰减时的收敛和最大不利扩大。不能只选最终收敛的事件。minute TP的available_exchange_ms还要加feed延迟才能成为本地可用时间。
+Fix quantity and holding rules on development data. Study a small, predetermined set of horizons such as 1 second, 10 seconds, 1 minute, 5 minutes, and 30 minutes. Within comparable starting-excess bands, compare convergence and adverse widening when pressure strengthens or weakens. Retain events that do not converge. Add feed delay to a minute feature's `available_exchange_ms` before treating it as locally known.
 
-精确标签为 `10000×[(P_t−S_t)−(P_(t+H)−S_(t+H))]/S_t`。所有价格是mid时，这是理想毛收敛；不能把 `basis_t−basis_(t+H)` 当完全相等的PnL。合适时再做 `Y=α+β1×excess+β2×pressure_decay+β3×momentum+ε`；先单变量消融，不急于回归全部因子。
+The exact convergence label is:
 
-V1仅加压力减弱；V2仅加momentum；V3在有证据的模型上估算当时可知的未来成本并设置buffer。每版均计成本，没有成本过滤不等于免费成交。OU模型只在稳定均值回归有证据后考虑，初版不需GPU。
+```text
+Y(t,H) = 10000 × [(P_t − S_t) − (P_(t+H) − S_(t+H))] / S_t
+```
 
-## C 回测与统计
+With mid-prices this measures ideal gross convergence relative to entry spot notional. `basis_t − basis_(t+H)` is not exactly the same P&L because its denominators differ. After simple conditional comparisons, a candidate regression is `Y = alpha + beta1 × excess + beta2 × pressure_decay + beta3 × momentum + error`. Test additions separately before combining them.
 
-replay.py处理交易所更新、观察到的行情、订单到达和成交回报；accounting.py按实际成交维护数量、费用与现金恒等式。先跑 `PYTHONPATH=src python3 -m unittest discover -s tests -v`，再审阅合成示例的orders/fills/trades，最后核对真实样本。
+V1 adds only weakening relative pressure. V2 separately adds momentum. V3 can apply a cost filter to a version supported by evidence, using cost estimates available at decision time. Every version still pays modeled costs. Consider OU modeling only after evidence of sufficiently stable mean reversion; no GPU is needed for this baseline.
 
-新增信号只产生订单意图，不改账本公式。每笔保留决策/发送/到达/成交/回报时间，部分成交和失败交易不能删掉。数据结束未平仓明确报告。净收益分母分别用开仓现货名义金额与全配置资本。
+## C — Backtesting and statistical validation
 
-后续按日期分development→validation→final，参数在final前冻结。剔除标签跨越分界的事件；episode跨边界也不能拆成两个独立样本。实现了基础timestamp purge helper，但完整多日分割、episode块bootstrap、稳健性和样本外报告尚未实现。两小时零交易不能报告置信区间或年化Sharpe。
+`replay.py` handles exchange updates, observed messages, order arrivals, and execution reports. `accounting.py` maintains actual fill quantities, fees, and cash-flow identities. Start with `PYTHONPATH=src python3 -m unittest discover -s tests -v`, inspect the synthetic order/fill/trade trace, then audit real-data outputs.
 
-第二周产物：每版交易数、独立episode数、费用/毛净分解、最差交易、drawdown、最大不利扩大、时段与资金占用、去掉最大赢家后的情况。所有尝试追加experiment_register。
+A signal requests orders; it does not change accounting rules. Retain decision, send, arrival, fill, and report times. Keep partial fills, failed orders, and recovery costs. Report outstanding positions at the data boundary. Show returns relative to entry spot notional and total allocated capital separately.
 
-## D 执行、成本与风险
+Later, split chronologically into development, validation, and final evaluation, freezing choices before the final interval. Purge outcomes crossing split boundaries and avoid treating one episode on both sides as independent evidence. A basic timestamp purge helper exists; multi-day validation, episode-block bootstrap, robustness reports, and out-of-sample evaluation are not yet implemented. The two-hour no-trade result cannot support confidence intervals or an annualized Sharpe claim.
 
-从第一天核验合约乘数、lot、tick、最小量、费用币种和历史账户档位。当前规格响应是取得时快照，不能声称整个历史期没有改过规则。当前费用是情景，尚未拿到适用账户费率。
+Second-week deliverables: trade and independent-episode counts; gross, fees, funding, and net decomposition; worst trade; drawdown; adverse widening; holding time and capital use; time-of-day stability; and results excluding the largest winners. Append every attempted version to the experiment register.
 
-先四笔taker：现货ask买、永续bid卖；现货bid卖、永续ask买。深度不足就部分成交，单腿失败按预定规则撤回。延迟拆feed/order/report；100/500/1000/2000ms等是预设压力情景，不能当作测量结果。不同尺寸必须满足合约单位，并检查当时深度。
+## D — Execution, costs, and risk
 
-需要单独补上：funding参考价格、结算资格、保证金权益和维持要求、不可及时划转、币本位费用残余、融资和稳定币风险。当前程序不能验证清算安全。maker必须另建排队/取消/逆向选择模型，不能直接换低费率。
+From the start, verify contract multipliers, lot and tick sizes, minimum quantities, fee currencies, and historical account tiers. A current specification response does not prove historical rules were unchanged. Current fees are scenarios; applicable account rates remain unverified.
 
-本轮无购买、真实下单、实盘部署或后台常驻任务。接下来最有价值的工作是扩大连续样本并记录序列与接收时点，让信号组拥有真正适用的研究区间。
+Model four taker directions: buy spot at ask, sell perpetual at bid, sell spot at bid, and buy perpetual at ask. Insufficient depth means a partial fill. Handle one-leg failure by a predetermined recovery rule. Distinguish feed, order, and report latency. Scenarios such as 100/500/1000/2000 ms are not measurements. Each tested size must satisfy contract units and available depth.
+
+Still needed: funding reference prices and settlement eligibility; margin equity and maintenance requirements; transfer delays; base-currency fee residuals; financing; and stablecoin exposure. Current results cannot validate liquidation safety. Maker research requires queue, cancellation, and adverse-selection assumptions, not merely a lower fee rate.
+
+This stage has no paid-data purchase, live orders, deployment, or indefinite background capture. Prioritize continuous samples and reliable sequence/receipt-time evidence before adding more signals.

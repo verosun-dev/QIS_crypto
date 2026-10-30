@@ -7,3 +7,6 @@ data/processed/
 outputs/*/features.csv
 outputs/*/equity.csv
 outputs/*/events.csv
+
+# macOS folder metadata
+.DS_Store

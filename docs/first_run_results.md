@@ -1,52 +1,50 @@
-# 首轮结果 2026年10月30日
+# First-run results — 30 October 2026
 
-已完成真实数据下载、两小时盘口回放、零交易V0报告，以及合成成交账本和18项测试。**还没有证明策略盈利，也未完成全天/一周或样本外研究。**
+The first iteration completed real-data acquisition, a two-hour book replay, a no-trade V0 report, a separate synthetic fill ledger, and 18 tests. **It has not established profitability or completed a full-day, full-week, or out-of-sample study.**
 
-## 输入和下载
+## Inputs and acquisition
 
-已完整核对交接prompt、14页Project Guide及Reading Guide的19项索引。另核对六份论文/介绍附件的标题、版本、摘要和相关主题，并识别两份套利材料分别为两页介绍和56页论文。没有宣称全文复现所有论文。
+The handoff prompt, 14-page Project Guide, and all 19 Reading Guide entries were reviewed. Titles, versions, abstracts, and relevant themes were checked in six supplied paper/introduction attachments. The similarly named arbitrage files were identified as a two-page introduction and a 56-page paper. This was not a full replication of all readings. Original attachments were not modified or redistributed with this repository.
 
-工作区原先只有Git目录，没有覆盖既有研究代码。本轮全部实现位于当前工作区；原附件未修改。
+Public OKX responses supplied BTC-USDT and BTC-USDT-SWAP book archives for 23 October 2026, trade archives for 23/24 October under UTC+8 boundaries, current instrument specifications, and the research day's funding history. Six compressed files total **606,258,642 bytes**, approximately 606.3 MB. All ZIP/GZIP compression CRC checks passed, and local SHA256 fingerprints were saved. This establishes decompression integrity, not completeness of exchange messages.
 
-从OKX官方公开接口取得BTC-USDT及BTC-USDT-SWAP：2026-10-23两腿400档盘口，23/24日两腿成交（UTC+8日界），当前合约规格和研究日funding历史。六个压缩文件合计606,258,642字节，约606.3 MB；全部ZIP/GZIP压缩CRC校验通过，已保存SHA256。这证明下载文件可完整解压，不证明交易所消息无遗漏。
+See `data/manifests/downloads.json`, `archive_integrity.json`, and `input_documents.json` for provenance. Public retrieval required no purchase or API key. The initial implementation began in a workspace containing only Git metadata and did not overwrite existing research code.
 
-下载清单：`data/manifests/downloads.json`；完整性：`archive_integrity.json`；附件指纹：`input_documents.json`。免费公开获取，无API密钥或采购。
+## Processed interval and quality
 
-## 实际处理范围和质量
+Full-day raw archives were downloaded; event-by-event book reconstruction covered only **23 October 2026, 00:00–02:00 UTC**. A 30-minute lookback was explicitly used for debugging. The proposed 24-hour reference needs preceding-day input. This interval was not treated as a final test set.
 
-原始全天文件已下载；逐条盘口重建只覆盖 **2026-10-23 00:00–02:00 UTC**。以30分钟作为明确标注的调试暖机，原计划24小时需补前一天样本。未把此调试窗口当最终测试集。
-
-| 指标 | Spot | Perpetual |
+| Metric | Spot | Perpetual |
 |---|---:|---:|
-| 已处理盘口消息 | 355,299 | 619,418 |
-| 快照数 | 8 | 8 |
-| 缺失序列字段的消息 | 355,299 | 619,418 |
-| 时间倒退 | 0 | 0 |
-| 目标两小时成交记录 | 35,678 | 227,138 |
-| 重复成交ID | 0 | 0 |
-| source=1成交 | 251 | 635 |
+| Processed book messages | 355,299 | 619,418 |
+| Snapshots | 8 | 8 |
+| Messages missing sequence fields | 355,299 | 619,418 |
+| Timestamp regressions | 0 | 0 |
+| Trade records inside the two-hour target | 35,678 | 227,138 |
+| Duplicate trade IDs | 0 | 0 |
+| Trades with `source=1` | 251 | 635 |
 
-档案只有action和毫秒ts，没有seqId/prevSeqId及本机接收时间。因此允许受限exchange-time研究，**序列连续性未验证**。每秒决策共7199个有效观测；开头一次决策尚无行情被拒绝。没有插值或未来nearest匹配。未来完整性评估仍需实时序列/供应商证据。
+The archive contains actions and millisecond timestamps, but no `seqId`/`prevSeqId` or local receipt timestamps. The run therefore supports restricted exchange-time research with **unverified sequence continuity**. There were 7,199 valid sampled observations. The first decision had no available books and was rejected. No interpolation or future nearest-neighbor match was used. Stronger completeness claims require additional sequence or vendor evidence.
 
-## V0为何没有开仓
+## Why V0 opened no position
 
-在有效的每秒观测中，basis最小−5.7822 bps，中位数−4.1477 bps，最大−2.4632 bps。永续在这个窗口始终相对现货便宜；V0只允许正溢价方向，所以允许入场期间2999次决策均被正basis条件拒绝。
+Across valid one-second observations, basis ranged from **−5.7822 to −2.4632 bps**, with a median of **−4.1477 bps**. The perpetual was cheaper than spot at every sampled point. Because V0 only trades a positive premium, the positive-basis condition rejected all 2,999 decisions inside the allowed entry interval.
 
-![真实数据的两腿中间价与basis](../outputs/okx_20261023_debug_v0/basis.png)
+![Observed spot and perpetual mids and basis from real data](../outputs/okx_20261023_debug_v0/basis.png)
 
-结果：orders=0、fills=0、closed trades=0、结束库存=0。已生成带字段表头的空交易表，而不是伪造一笔交易。毛收益、费用、funding和净现金流均为0，是**未交易**的账户恒等结果；胜率和最差交易为空，不解释成零风险或成本已通过验证。
+Orders, fills, closed trades, and ending inventory were all zero. Header-only order and trade tables were produced rather than invented trades. Gross P&L, fees, funding, and net cash flow were zero because no position was opened. Win rate and worst trade are undefined. This is not evidence of zero risk or verified execution economics.
 
-费率使用现货10 bps/次、永续5 bps/次的教学情景；feed/order/report分别假设100/150/100 ms。由于无真实样本订单，不能从本轮估计其经济影响。实际账户费率、历史规则、保证金清算尚未验证。funding参考价格缺失，计划跨结算点的交易会被阻止；不能把缺失现金流当0。
+The configured scenario uses spot fees of 10 bps per fill, perpetual fees of 5 bps per fill, and feed/order/report latency of 100/150/100 ms. With no real-sample orders, this run cannot estimate their effect on trading outcomes. Historical account rates, contract rules, and liquidation behavior remain unverified. Missing funding reference prices restrict planned settlement crossings; missing cash flows are not assigned zero.
 
-## 已验证的程序行为
+## Verified code behavior
 
-18项测试覆盖：教学毛利润+2、相同美元涨幅抵消、绝对数量覆盖和0删除、缺序列拒绝、心跳/重复/重置、100006的VWAP、深度不足部分成交、静态市场跨价与费用损失、funding正负及实际数量、UTC/UTC+8边界、同timestamp不同trade_id、未来数据不改过去特征、暖机缺口、按时间purge、contract multiplier、订单到达时报价、回报延迟、部分成交撤回、未平仓结尾。
+The 18 tests cover the +2 USDT teaching calculation; cancellation of equal dollar price changes; absolute-size replacement and zero deletion; missing sequences; heartbeats, duplicate messages, and sequence resets; VWAP of 100,006; insufficient depth; fees and crossing losses in a static market; funding direction and actual quantities; UTC/UTC+8 boundaries; distinct trade IDs sharing a timestamp; causal features; warm-up gaps; timestamp purging; contract multipliers; arrival-time prices; report delay; partial-fill unwinds; and terminal open positions.
 
-`outputs/synthetic_demo`另有完整模拟订单/成交/交易表：人为价格与两秒持有期下产生一笔交易，gross −0.02 USDT，fees 3.003015 USDT，net −3.023015 USDT。这里只检查账本和状态机；不是历史回测，不应与真实零交易结果合并。
+`outputs/synthetic_demo` contains an independent artificial order/fill/trade trace with a two-second holding period. It produces one trade with gross P&L **−0.02 USDT**, fees **3.003015 USDT**, and net P&L **−3.023015 USDT**. This checks accounting and state transitions only. It must not be combined with historical results.
 
-第一次与最终回放均登记在`outputs/experiment_register.jsonl`；两次结果一致，后一版补充质量指标与Decimal单位转换。每次记录运行命令、参数、Python和源码指纹；所有尝试保留。
+The initial and final debug replays are both retained in `outputs/experiment_register.jsonl`. Their trading results agree; the later version added quality metrics and Decimal unit conversion. Records include commands, parameters, Python version, and a source fingerprint. Publishing English documentation does not rerun or revise those historical experiments.
 
-## 可复现命令
+## Reproduce
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
@@ -54,10 +52,10 @@ PYTHONPATH=src python3 scripts/synthetic_demo.py
 PYTHONPATH=src python3 -m qis_spot_perp.cli run --config configs/debug.json
 ```
 
-核心无第三方依赖，本轮Python3.14.2。下载/清单/压缩完整性/绘图命令见README。实时采集脚本已准备，有时长和字节上限，但本轮未联网运行；不把接口实现称为真实采集验证。
+The core needs no third-party packages; the recorded environment was Python 3.14.2. See the README for download, manifest, integrity-check, and chart commands. The bounded live collector was prepared but not network-tested in this iteration.
 
-## 下一项最有价值的实验
+## Next experiment
 
-预先固定连续日期范围，加入24小时暖机，再统计是否有足够多的正溢价episode。若整周都缺少适合该方向的事件，报告该方向在该时期缺乏机会，而不是删掉正basis条件或只挑盈利日。
+Predetermine a continuous date range, implement multi-day replay, supply a full 24-hour warm-up, and count eligible positive-premium episodes. If the period contains too few opportunities, retain that finding rather than changing direction or selecting favorable days after seeing the result.
 
-在有真实交易后，优先核对每次成交、历史费用/币种、funding参考价和保证金路径，再比较压力与momentum的单独增量。不对两小时样本给Sharpe或置信区间，不把合成正确性当作可执行收益证据。
+When real-sample trades exist, audit fills, historical fees and fee currencies, funding references, and margin paths before interpreting pressure or momentum additions. Do not report a Sharpe ratio or a meaningful confidence interval from this two-hour no-trade sample.

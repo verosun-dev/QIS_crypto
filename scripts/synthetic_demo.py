@@ -24,7 +24,7 @@ def main():
         write_csv(out/f'{name}.csv',rows,fields)
     (out/'config.json').write_text(json.dumps(c,indent=2))
     (out/'summary.json').write_text(json.dumps(r.summary(),indent=2))
-    (out/'README.md').write_text('# 合成教学示例\n\n人为设定价格与两秒持有期，仅检查状态与账本。不是历史行情、回测盈利或可成交证据。\n')
+    (out/'README.md').write_text('# Synthetic teaching example\n\nArtificial prices and a two-second holding period are used only to check state transitions and accounting. These are not historical observations, evidence of backtest profitability, or proof of executable fills.\n')
     print(json.dumps(r.summary(),indent=2))
 
 
