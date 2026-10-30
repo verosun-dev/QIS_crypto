@@ -1,52 +1,54 @@
-# Spot–Perpetual 项目解读
+# Spot–Perpetual Project Interpretation
 
-我们要检验的是：永续相对现货异常昂贵时，买现货并卖出等量永续，之后价差缩小的收益，是否足以支付四次成交和其他现金流。当前没有证明存在正净收益。
+What we are testing: when the perpetual is unusually expensive relative to spot, buy spot and sell an equal quantity of the perpetual. Does the profit from the spread narrowing later cover four fills and the other cash flows? **No positive net profit has been shown so far.**
 
-## 一笔交易究竟赚什么
+## What exactly does one trade earn?
 
-下面是教学数字，不是真实行情。买 0.01 BTC 现货，成交价 100,000 USDT；卖空 0.01 BTC 对应的线性永续，成交价 100,300。之后卖现货 101,000，买回永续 101,100。
+The numbers below are teaching numbers, not real market data. Buy 0.01 BTC spot at 100,000 USDT, and short 0.01 BTC of the linear perpetual at 100,300. Later, sell the spot at 101,000 and buy back the perpetual at 101,100.
 
-| 腿 | 计算 | 毛利润 USDT |
+| Leg | Calculation | Gross profit (USDT) |
 |---|---|---:|
-| 现货 | 0.01 × (101000 − 100000) | 10 |
-| 永续 | 0.01 × (100300 − 101100) | −8 |
-| 配对 | 0.01 × (300 − 100) | 2 |
+| Spot | 0.01 × (101000 − 100000) | 10 |
+| Perpetual | 0.01 × (100300 − 101100) | −8 |
+| Pair | 0.01 × (300 − 100) | 2 |
 
-两条价格都上涨也能赚钱，因为我们交易的是美元价差的缩小。两条腿同时上涨相同美元金额，利润抵消；同百分比上涨并不完全抵消。
+The trade makes money even if both prices rise, because what we trade is the narrowing of the spread in dollar terms. If both legs rise by the same dollar amount, the profits offset; a rise by the same percentage does not offset completely.
 
-数量必须都是 0.01 BTC 的敞口。两边各买卖 1000 USDT 并不严格配平，因为价格不同。当前取得的 OKX 永续规格是每张 0.01 BTC，所以本例对应 1 张。用 Decimal 保留数量和价格精度，并检查 lot/min size。
+The quantity must be the same 0.01 BTC of exposure on both sides. Buying and selling 1000 USDT on each side is not strictly hedged, because the prices differ. The OKX perpetual specification obtained here is 0.01 BTC per contract, so this example corresponds to 1 contract. Decimal is used to preserve quantity and price precision, and lot/min size is checked.
 
-再加上**示意费率**：现货每次 10 bps、永续每次 5 bps。现货两次手续费 1 + 1.01 = 2.01；永续两次 0.5015 + 0.5055 = 1.007。总费用 3.017，若这段持有期没有 funding 结算，净利润为 **−1.017 USDT**。如果实际跨过结算，资金费要另算，不能按持有分钟数线性摊。
+Now add **illustrative fee rates**: 10 bps per trade for spot and 5 bps per trade for the perpetual. The two spot fees are 1 + 1.01 = 2.01; the two perpetual fees are 0.5015 + 0.5055 = 1.007. Total fees are 3.017. If no funding settlement falls within this holding period, net profit is **−1.017 USDT**. If the position actually crosses a settlement, funding must be computed separately and must not be spread linearly by minutes held.
 
-若上述已经是实际买卖方向和深度得到的成交价，不再扣一次买卖价差。教学例子的资金配置若是现货 1000、保证金 200、储备 300，组合收益率分母是 1500，不能只除以 200。
+If the prices above are already actual fill prices obtained from the real trade direction and depth, the bid-ask spread is not deducted a second time. If the capital allocation in the teaching example is 1000 for spot, 200 for margin and 300 for reserve, the denominator for the portfolio return is 1500, not just 200.
 
-## 为什么价差可能缩小，也可能不缩小
+## Why the spread may narrow, and why it may not
 
-现货买入需要资金，永续多头可以获得杠杆敞口。永续的急迫买盘可能把它推贵。套利者买现货、卖永续会缓解这种压力，但手续费、保证金、可用资本、流动性和平台风险会限制反应速度。
+Buying spot requires capital, whereas a perpetual long can obtain leveraged exposure. Urgent buying in the perpetual may push it higher. Arbitrageurs buying spot and selling the perpetual would relieve this pressure, but fees, margin, available capital, liquidity, and platform risk limit how quickly they can react.
 
-正 funding 通常让多头向空头付款，但永续没有固定到期日迫使两条价格在某天相等。高溢价可能是持续融资需求或状态变化，而非暂时错误。做空永续还可能在价差收敛前因保证金不足被清算；现货的账面盈利不等于永续账户已经获得补充保证金。
+Positive funding usually means longs pay shorts, but the perpetual has no fixed expiry that forces the two prices to be equal on some day. A high premium may reflect persistent financing demand or a change of regime rather than a temporary mispricing. A short perpetual position may also be liquidated for insufficient margin before the spread converges; paper profit on the spot leg does not mean the perpetual account has received additional margin.
 
-要分清：成交价是发生过的交易；bid/ask 是可见可成交报价；mark 是风险估值；index/oracle 是参考价格。后两种不能直接当作成交价。
+Distinguish the following: a trade price is a transaction that has occurred; bid/ask are visible, executable quotes; mark is a risk valuation price; index/oracle is a reference price. The latter two cannot be used directly as fill prices.
 
-## 从观察价差到一个可检查的规则
+## From an observed spread to a checkable rule
 
-1. 同平台 BTC-USDT 与 BTC-USDT-SWAP，统一 USDT 和 BTC 数量。
-2. 两腿中间价分别是 `(bid+ask)/2`；`basis = 10000×(perp_mid/spot_mid−1)`，单位 bps。
-3. 用当前时刻之前的窗口中位数估计正常 basis；`excess = 当前 basis − 历史中位数`。本轮只有两小时调试，明确改用过去 30 分钟；正式候选的 24 小时需额外前一天数据。
-4. 只有 basis > 0、excess ≥ 2 bps、数据新鲜且已暖机，才允许发出双腿 IOC taker 模拟单。2 bps 是工程默认值，没有优化或验证。
-5. 真正配平后持有 30 分钟；数据异常、已知亏损达到限额或单腿失败时按明确规则退出。最多一对仓位。
-6. 逐档成交和逐笔费用进入公共账本。最后分开看毛收益、执行损失、手续费、funding 和净收益。
+1. Same venue, BTC-USDT and BTC-USDT-SWAP, with USDT and BTC quantities unified.
+2. The mid price of each leg is `(bid+ask)/2`; `basis = 10000×(perp_mid/spot_mid−1)`, in bps.
+3. Estimate the normal basis using the median of a window before the current time; `excess = current basis − historical median`. This round has only a two-hour debug window, so it explicitly uses the past 30 minutes instead; the formal candidate's 24 hours requires extra data from the previous day.
+4. A two-leg IOC taker simulated order may be issued only if basis > 0, excess ≥ 2 bps, the data is fresh, and warm-up is complete. The 2 bps is an engineering default and has been neither optimized nor validated.
+5. After the legs are truly balanced, hold for 30 minutes; exit under explicit rules when data is abnormal, the known loss reaches the limit, or one leg fails. At most one pair of positions.
+6. Fills level by level and fees per fill go into the public ledger. At the end, look separately at gross profit, execution loss, fees, funding, and net profit.
 
-例如基差 30 bps，历史中位数 28 bps，异常只有 2 bps；这不意味着有 30 bps 利润空间，更不意味着能付得起约 30 bps 的示意往返手续费。
+For example, a basis of 30 bps with a historical median of 28 bps means the anomaly is only 2 bps. This does not imply a 30 bps profit margin, let alone that the roughly 30 bps of illustrative round-trip fees can be afforded.
 
-## 后续三个信号各在问什么
+## What each of the three later signals asks
 
-`TP=(主动买入成交额−主动卖出成交额)/(两者之和)`，先用过去已经结束的一分钟，两市场各自归一化。买额 80、卖额 20 时 TP=0.6。无成交返回缺失，不能当零。`r=TP_perp−TP_spot`；`d=r_上一窗口−r_当前窗口`，d>0 只是永续相对买入优势正在减弱的候选条件。
+`TP=(aggressive buy value − aggressive sell value)/(sum of the two)`, computed first from the most recent completed one-minute window, normalized separately for each market. With buys of 80 and sells of 20, TP=0.6. If there is no trading, it returns missing, which must not be treated as zero. `r=TP_perp−TP_spot`; `d=r_previous window − r_current window`, and d>0 is only a candidate condition indicating that the perpetual's relative buying advantage is weakening.
 
-`momentum=basis_t−basis_(t−60秒)`；负数说明最近已开始缩小。它可能降低追着扩张做空的风险，也可能错过最好价格。当前程序计算它，但 V0 不用它筛选。
+`momentum=basis_t−basis_(t−60 seconds)`; a negative value means the basis has already started to narrow recently. It may reduce the risk of shorting into an expanding spread, but it may also miss the best price. The program currently computes it, but V0 does not use it to filter.
 
-TP 不包含撤单和补单。盘口快照数量不平衡 QI 和盘口变化 OFI 也是不同概念。先逐个检验增量效果，不能把论文里的同期解释力当作未来预测收益。
+TP does not include cancellations and replenishments. Order book snapshot quantity imbalance (QI) and order book change (OFI) are also different concepts. Test the incremental effect of each one at a time; the contemporaneous explanatory power reported in papers must not be taken as future predictive returns.
 
-原 Project Guide 第 1–4 页建立现金流，第 5–9 页提出机制和信号，第 10–12 页要求数据与执行，第 13–14 页用于团队组织与来源。其图表均为教学合成示例；本项目真实输出另存 outputs。
+In the original Project Guide, pages 1-4 establish the cash flows, pages 5-9 present the mechanism and signals, pages 10-12 call for data and execution, and pages 13-14 are for team organization and sources. Its charts are all teaching synthetic examples; the real outputs of this project are stored separately in outputs.
 
-来源：用户提供的 `Spot_Perpetual_Project_Guide.pdf`（14 页）及执行 prompt；当前合约原始响应见 `data/manifests/okx-swap-spec.json`。资金和策略解释用于研究规格，不是实盘交易建议或盈利结论。
+Sources: the user-provided `Spot_Perpetual_Project_Guide.pdf` (14 pages) and the execution prompt; for the raw response of the current contract specification, see `data/manifests/okx-swap-spec.json`. The funding and strategy interpretation is for the research specification and is not live trading advice or a conclusion about profitability.
+
+---
