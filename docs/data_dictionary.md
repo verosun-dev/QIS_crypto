@@ -1,29 +1,30 @@
-# 数据字典和时间语义
+# Data Dictionary and Time Semantics
 
-| 来源或输出 | 字段 | 单位与用途 |
+| Source or output | Field | Unit and purpose |
 |---|---|---|
-| raw trade CSV | instrument_name, trade_id | 合约及唯一成交ID；去重不按timestamp |
-| raw trade CSV | side, price, size | 主动buy/sell；USDT/BTC；spot size为BTC，swap size为张数 |
-| raw trade CSV | created_time | Unix毫秒、exchange time；没有本机接收时间 |
-| raw trade CSV | source | 原样统计0/1；官方当前REST文档1为RPI（旧ELP），档案对应语义待进一步确认 |
-| raw book JSON | instId, action, ts | 合约、snapshot/update、Unix毫秒 |
-| raw book JSON | bids/asks [price,size,count] | 价格、绝对数量、委托数量；本轮档案三列，不能当WebSocket四列 |
-| raw book JSON | seqId/prevSeqId/checksum | 本轮全部缺失，未伪造；完整性未知 |
-| metadata | ctVal,ctMult,ctValCcy | 张数×面值×乘数→BTC；当前0.01×1 BTC/张 |
-| metadata | lotSz,minSz,tickSz | 下单单位、最小数量、价格步长；Decimal映射 |
-| features.csv | ts | 本地模拟决策毫秒；只读取已收到行情 |
-| features.csv | spot_mid,perp_mid | 当时观察到的mid，非成交价 |
-| features.csv | basis_bps,excess_bps,momentum_60s_bps | 基点；excess参考严格过去窗口 |
-| pressure.csv | available_exchange_ms | 该分钟结束时刻；用于信号还需额外接收延迟 |
-| pressure.csv | spot_tp,perp_tp,relative_tp,relative_decay | 每市场主动成交额归一化；无量为缺失；当前含所有source，非OFI |
-| orders.csv | send_ms,arrival_ms,report_ms | 分别为发送、到达交易所、收到成交回报 |
-| fills.csv | quantity_btc,price,fee_usdt | 每档成交基础币数量、USDT/BTC、费用USDT |
-| trades.csv | gross_fill_usdt,fees_usdt,funding_usdt,net_usdt | 同一公共账本现金流；empty CSV代表没有交易 |
-| equity.csv | equity_usdt,residual_btc,state | 总配置资本+按mid估值PnL、spot+perp残余BTC、当前已知状态 |
-| funding.json | fundingTime,realizedRate | 实际结算时刻和最终费率；不能作为过去入场信息 |
+| raw trade CSV | instrument_name, trade_id | Instrument and unique trade ID; deduplication is not done by timestamp |
+| raw trade CSV | side, price, size | Aggressor buy/sell; USDT / BTC; spot size is in BTC, swap size is in contracts |
+| raw trade CSV | created_time | Unix milliseconds, exchange time; no local receive time |
+| raw trade CSV | source | Counted as-is as 0/1; the current official REST docs say 1 means RPI (formerly ELP), and the corresponding semantics in the archive remain to be confirmed |
+| raw book JSON | instId, action, ts | Instrument, snapshot/update, Unix milliseconds |
+| raw book JSON | bids/asks [price,size,count] | Price, absolute quantity, number of orders; this archive has three columns and must not be treated as the four-column WebSocket format |
+| raw book JSON | seqId/prevSeqId/checksum | All missing in this run and not fabricated; completeness is unknown |
+| metadata | ctVal, ctMult, ctValCcy | Contracts × face value × multiplier → BTC; currently 0.01 × 1 BTC/contract |
+| metadata | lotSz, minSz, tickSz | Order lot size, minimum size, tick size; mapped as Decimal |
+| features.csv | ts | Local simulated decision time in ms; reads only quotes already received |
+| features.csv | spot_mid, perp_mid | Mid prices observed at that time, not trade prices |
+| features.csv | basis_bps, excess_bps, momentum_60s_bps | Basis points; excess references a strictly past window |
+| pressure.csv | available_exchange_ms | End time of that minute; using it as a signal additionally requires a receive latency |
+| pressure.csv | spot_tp, perp_tp, relative_tp, relative_decay | Aggressor trade value normalized per market; missing if there is no volume; currently includes all sources; not OFI |
+| orders.csv | send_ms, arrival_ms, report_ms | Time sent, time arrived at the exchange, time the fill report was received |
+| fills.csv | quantity_btc, price, fee_usdt | Base-currency quantity filled at each level, USDT/BTC, fee in USDT |
+| trades.csv | gross_fill_usdt, fees_usdt, funding_usdt, net_usdt | Cash flows from the same public ledger; an empty CSV means there were no trades |
+| equity.csv | equity_usdt, residual_btc, state | Total configured capital + PnL marked at mid, residual BTC (spot + perp), current known state |
+| funding.json | fundingTime, realizedRate | Actual settlement time and final rate; cannot be used as past entry information |
 
-Book的valid在本轮只表示存在可重建快照和更新，以及没有已检测的格式/顺序错误；sequence_verified仍为false。策略每秒检查双腿非空、bid<ask、未过期（≤2秒）。质量报告不把“未发现异常”写成“原始数据没有缺口”。
+In this run, a book's `valid` flag only means that a reconstructable snapshot and updates exist and that no format or ordering errors were detected; `sequence_verified` remains false. Each second, the strategy checks that both legs are non-empty, that bid < ask, and that the data is not stale (≤ 2 seconds). The quality report does not rewrite "no anomalies found" as "the raw data has no gaps."
 
-压缩文件本地SHA256记录在downloads.json，证明本次代码使用哪份文件；不是交易所签发的校验和。原始数据不提交Git，处理文件/报告可重新生成。原始UTC全天已下载，但盘口只检查前两小时；成交统计也仅描述目标两小时。
+The local SHA256 of each compressed file is recorded in `downloads.json`; it proves which file this run of the code used, and is not a checksum issued by the exchange. Raw data is not committed to Git, while processed files and reports can be regenerated. The full UTC day of raw data has been downloaded, but only the first two hours of the order book were checked, and trade statistics likewise describe only the target two hours.
 
-source=1流动性是否可被普通API taker获得是另一个问题。pressure作为观察到的市场信息目前包含这类成交，不能据此给订单增加相同流动性；V0不使用pressure，不受该候选口径影响。
+Whether source=1 liquidity can be obtained by an ordinary API taker is a separate question. Pressure, as observed market information, currently includes these trades, so no equivalent liquidity should be added to our orders on that basis. V0 does not use pressure and is therefore unaffected by this candidate definition.
+
