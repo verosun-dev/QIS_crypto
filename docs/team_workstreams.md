@@ -1,47 +1,49 @@
-# 四个方向如何开始
+# How the Four Workstreams Start
 
-所有组共享 configs、原始manifest和一套fill/account账本。两腿匹配、时间定义、费用币种有变化，要先更新公共规格，再产生新的实验ID。
+All groups share configs, the raw manifest, and a single fill/account ledger. If the two-leg matching, the time definitions, or the fee currency changes, first update the common specification, then generate a new experiment ID.
 
-## A 数据与盘口
+## A. Data and Order Book
 
-**成交数据从哪里来，是否要买？** 本轮已经从OKX公开历史接口下载真实档案，不需要购买或API密钥。运行 `python3 scripts/fetch_sample.py --date 2026-10-23` 先查看文件和体积；加 `--download --max-mb 700` 才下载，单文件请求最长180秒。此例实际约606.3 MB（官方sizeMB更接近MiB，不能直接当十进制MB），原始解压体积超过3 GB，代码流式读取而不整体解压。更长时期先分段列清单，不能放开无限下载。
+**Where does the trade data come from, and does it need to be purchased?** This round already downloaded real archives from OKX's public historical-data interface; no purchase or API key is needed. Run `python3 scripts/fetch_sample.py --date 2026-10-23` first to view the files and their sizes; add `--download --max-mb 700` to actually download, with a single-file request limit of 180 seconds. In this example the actual size is about 606.3 MB (the official sizeMB is closer to MiB and must not be taken directly as decimal MB), and the raw uncompressed size exceeds 3 GB; the code reads in a streaming fashion rather than decompressing everything. For longer periods, list the manifest in segments first; downloads must not be left unlimited.
 
-入口：[OKX历史下载](https://www.okx.com/historical-data)、[官方API](https://www.okx.com/docs-v5/en/#public-data-rest-api-get-historical-market-data)。module 1为成交、4为400档盘口；API先给下载链接。盘口按UTC日，成交按UTC+8日；一个UTC全天需两份相邻成交档案。本轮已下载23/24日的两腿成交和23日的两腿盘口，01点的一条记录要按行内UTC时间归属，而不是按文件名。
+Entry points: [OKX historical download](https://www.okx.com/historical-data), [official API](https://www.okx.com/docs-v5/en/#public-data-rest-api-get-historical-market-data). Module 1 is trades and module 4 is the 400-level order book; the API returns the download links first. Order books are by UTC day and trades by UTC+8 day; one full UTC day requires two adjacent trade archives. This round downloaded both legs' trades for the 23rd and 24th and both legs' order books for the 23rd. A record at 01:00 must be assigned by the UTC time inside the row, not by the file name.
 
-“每天一个文件”可以有数百万笔记录，和日K线完全不同。日线/分钟线可画概貌，不能证明亚秒成交收益。Tick是事件时间粒度；L1是最优报价和数量；L2是价格档聚合数量；L3是逐订单。当前L2档案多次更新在约10ms间隔，不等于普通实时books通道的100ms描述，也不是撮合引擎所有事件。
+A "one file per day" archive can hold millions of records, which is completely different from daily candlesticks. Daily/minute bars can sketch an overview but cannot prove sub-second execution returns. Tick is event-time granularity; L1 is the best quote and its size; L2 is quantity aggregated per price level; L3 is order by order. The current L2 archive often has updates at roughly 10 ms intervals, which does not match the 100 ms description of the ordinary live books channel and is not every event of the matching engine.
 
-筛选先看同一underlying、同一报价/结算币、两腿同期覆盖、时间质量、深度、费用和规则。BTC优先是工程默认值。可扩ETH，但不能按事后收益最高选币。Binance官方档案可做备选机制筛查；切换时两腿一起切换并重新登记，不能一条腿OKX、一条腿Binance。商业历史L2只有具体缺口无法免费解决时才讨论购买。
+Screening first looks at the same underlying, the same quote/settlement currency, concurrent coverage of both legs, time quality, depth, fees, and rules. Prioritizing BTC is an engineering default. ETH can be added, but the coin must not be chosen by the highest return in hindsight. Binance's official archive can serve as an alternative for mechanism screening; when switching, both legs switch together and the run is registered anew, and one leg must not come from OKX with the other from Binance. Commercial historical L2 is to be discussed only when a specific gap cannot be solved for free.
 
-程序入口：data.py流式解压、UTC过滤、按trade_id去重；book.py按绝对数量覆盖，0删除，保留深档。历史档案没有序列字段，所以本轮无法做完整漏包证明；实时采集应保存原始消息、exchange ts、local receive UTC和到达顺序。报价长期不变要结合心跳，不能直接当断线。
+Program entry points: data.py does streaming decompression, UTC filtering, and deduplication by trade_id; book.py overwrites by absolute quantity, deletes at 0, and keeps deep levels. The historical archive has no sequence fields, so this round cannot produce a complete proof of no missed packets; live collection should save the raw message, the exchange ts, the local receive UTC, and the arrival order. A quote that stays unchanged for a long time must be judged together with the heartbeat and must not be treated directly as a disconnect.
 
-第一周产物：连续一周manifest、字段表、缺失区间、两腿时差/接收延迟、source=1特殊成交比例、sequence验证。不要向信号组输出伪造的“完整无缺口”标签。
+Week-one deliverables: a manifest for a continuous week, a field table, gap intervals, the time difference/receive latency between the two legs, the proportion of special source=1 trades, and sequence verification. Do not hand the signal group a fabricated "complete, no gaps" label.
 
-## B 价差与信号
+## B. Spread and Signals
 
-features.py当前实现basis、过去窗口median excess和60秒momentum；pressure.csv按已完成分钟保存两腿主动成交额压力及衰减，V0尚未使用压力。
+features.py currently implements basis, the past-window median excess, and the 60-second momentum; pressure.csv stores the two legs' aggressor-trade-value pressure and its decay by completed minute, and V0 does not use pressure yet.
 
-入门顺序：先在开发集固定q和持有期；用少量预设期限1秒、10秒、1分钟、5分钟、30分钟做事件路径研究；比较相同起始excess区间里，压力增强/衰减时的收敛和最大不利扩大。不能只选最终收敛的事件。minute TP的available_exchange_ms还要加feed延迟才能成为本地可用时间。
+Suggested order: first fix q and the holding period on the development set; run an event-path study over a few preset horizons: 1 second, 10 seconds, 1 minute, 5 minutes, and 30 minutes; compare, within the same starting excess range, the convergence and the maximum adverse widening when pressure strengthens versus decays. Do not select only the events that ended up converging. The available_exchange_ms of the minute TP also needs the feed latency added before it becomes locally available time.
 
-精确标签为 `10000×[(P_t−S_t)−(P_(t+H)−S_(t+H))]/S_t`。所有价格是mid时，这是理想毛收敛；不能把 `basis_t−basis_(t+H)` 当完全相等的PnL。合适时再做 `Y=α+β1×excess+β2×pressure_decay+β3×momentum+ε`；先单变量消融，不急于回归全部因子。
+The precise label is `10000×[(P_t−S_t)−(P_(t+H)−S_(t+H))]/S_t`. When all prices are mids, this is the ideal gross convergence; `basis_t−basis_(t+H)` must not be treated as exactly equal PnL. When appropriate, run `Y=α+β1×excess+β2×pressure_decay+β3×momentum+ε`; do single-variable ablations first, and do not rush to regress on all factors.
 
-V1仅加压力减弱；V2仅加momentum；V3在有证据的模型上估算当时可知的未来成本并设置buffer。每版均计成本，没有成本过滤不等于免费成交。OU模型只在稳定均值回归有证据后考虑，初版不需GPU。
+V1 adds only the weakening of pressure; V2 adds only momentum; V3 estimates, on a model with supporting evidence, the future costs knowable at the time, and sets a buffer. Every version counts costs; the absence of a cost filter does not mean free fills. An OU model is to be considered only after stable mean reversion has been evidenced; the first version needs no GPU.
 
-## C 回测与统计
+## C. Backtest and Statistics
 
-replay.py处理交易所更新、观察到的行情、订单到达和成交回报；accounting.py按实际成交维护数量、费用与现金恒等式。先跑 `PYTHONPATH=src python3 -m unittest discover -s tests -v`，再审阅合成示例的orders/fills/trades，最后核对真实样本。
+replay.py handles exchange updates, observed quotes, order arrival, and fill reports; accounting.py maintains quantity, fees, and the cash identity based on actual fills. First run `PYTHONPATH=src python3 -m unittest discover -s tests -v`, then review the orders/fills/trades of the synthetic example, and finally check the real sample.
 
-新增信号只产生订单意图，不改账本公式。每笔保留决策/发送/到达/成交/回报时间，部分成交和失败交易不能删掉。数据结束未平仓明确报告。净收益分母分别用开仓现货名义金额与全配置资本。
+New signals only produce order intents and do not change the ledger formulas. Each trade keeps its decision/send/arrival/fill/report times; partial fills and failed trades must not be deleted. Positions still open at the end of the data are reported explicitly. The denominator for net return uses, respectively, the opening spot notional and the total configured capital.
 
-后续按日期分development→validation→final，参数在final前冻结。剔除标签跨越分界的事件；episode跨边界也不能拆成两个独立样本。实现了基础timestamp purge helper，但完整多日分割、episode块bootstrap、稳健性和样本外报告尚未实现。两小时零交易不能报告置信区间或年化Sharpe。
+Later, split by date into development → validation → final, with parameters frozen before final. Remove events whose labels span a boundary; an episode that crosses a boundary also must not be split into two independent samples. A basic timestamp purge helper has been implemented, but the full multi-day split, episode-block bootstrap, robustness checks, and out-of-sample report have not yet been implemented. A two-hour sample with zero trades cannot support a confidence interval or an annualized Sharpe.
 
-第二周产物：每版交易数、独立episode数、费用/毛净分解、最差交易、drawdown、最大不利扩大、时段与资金占用、去掉最大赢家后的情况。所有尝试追加experiment_register。
+Week-two deliverables: for each version, the number of trades, the number of independent episodes, the fee/gross/net decomposition, the worst trade, the drawdown, the maximum adverse widening, the breakdown by time of day and capital usage, and the picture with the largest winner removed. All attempts are appended to experiment_register.
 
-## D 执行、成本与风险
+## D. Execution, Costs, and Risk
 
-从第一天核验合约乘数、lot、tick、最小量、费用币种和历史账户档位。当前规格响应是取得时快照，不能声称整个历史期没有改过规则。当前费用是情景，尚未拿到适用账户费率。
+From day one, verify the contract multiplier, lot, tick, minimum size, fee currency, and historical account tier. The current specification response is a snapshot at the time of retrieval, and it cannot be claimed that the rules were never changed during the historical period. The current fees are scenarios; the applicable account fee rates have not been obtained.
 
-先四笔taker：现货ask买、永续bid卖；现货bid卖、永续ask买。深度不足就部分成交，单腿失败按预定规则撤回。延迟拆feed/order/report；100/500/1000/2000ms等是预设压力情景，不能当作测量结果。不同尺寸必须满足合约单位，并检查当时深度。
+Start with four taker trades: buy spot at the ask and sell the perpetual at the bid; sell spot at the bid and buy the perpetual at the ask. If depth is insufficient, the fill is partial, and a single-leg failure is unwound by the predetermined rule. Latency is split into feed/order/report; 100/500/1000/2000 ms and the like are preset stress scenarios and must not be treated as measurements. Different sizes must satisfy the contract unit, and the depth at that time must be checked.
 
-需要单独补上：funding参考价格、结算资格、保证金权益和维持要求、不可及时划转、币本位费用残余、融资和稳定币风险。当前程序不能验证清算安全。maker必须另建排队/取消/逆向选择模型，不能直接换低费率。
+Items that need to be added separately: the funding reference price, settlement eligibility, margin equity and maintenance requirements, inability to transfer in time, residual fees in coin-margined terms, and financing and stablecoin risk. The current program cannot verify liquidation safety. Maker orders require a separate queue/cancellation/adverse-selection model and must not simply be swapped in with a lower fee rate.
 
-本轮无购买、真实下单、实盘部署或后台常驻任务。接下来最有价值的工作是扩大连续样本并记录序列与接收时点，让信号组拥有真正适用的研究区间。
+This round involved no purchases, real orders, live deployment, or resident background tasks. The most valuable next work is to expand the continuous sample and record sequence and receive times, giving the signal group a genuinely applicable research interval.
+
+---
