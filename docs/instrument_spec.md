@@ -1,27 +1,29 @@
-# 合约与来源核验
+# Contract and Source Verification
 
-检查日期为2026-10-30。原始公开API响应保存在data/manifests；它们是取得时规格，不自动证明2026-10-23规则相同。
+The check date is 2026-10-30. The raw public API responses are saved in data/manifests. They are the specifications as obtained at that time and do not automatically prove that the rules were the same on 2026-10-23.
 
-| 项目 | Spot | Perpetual |
+| Item | Spot | Perpetual |
 |---|---|---|
-| 场所与代码 | OKX BTC-USDT | OKX BTC-USDT-SWAP |
-| 标的与结算 | BTC / USDT | linear，ctValCcy BTC，settleCcy USDT |
-| 数量单位 | BTC | 张；每张0.01 BTC，ctMult=1 |
-| 价格步长 | 0.1 USDT/BTC | 0.1 USDT/BTC |
-| lotSz | 0.00000001 BTC | 0.01张 |
-| minSz | 0.00001 BTC | 0.01张 |
-| 本轮q | 0.01 BTC | 1张，即0.01 BTC |
-| 手续费 | 情景10 bps/次 | 情景5 bps/次 |
-| 费用币种 | 模型假定USDT；真实规则未核验 | 模型假定USDT；账户档位未核验 |
+| Venue and symbol | OKX BTC-USDT | OKX BTC-USDT-SWAP |
+| Underlying and settlement | BTC / USDT | linear, ctValCcy BTC, settleCcy USDT |
+| Quantity unit | BTC | Contracts; 0.01 BTC per contract, ctMult=1 |
+| Price tick | 0.1 USDT/BTC | 0.1 USDT/BTC |
+| lotSz | 0.00000001 BTC | 0.01 contracts |
+| minSz | 0.00001 BTC | 0.01 contracts |
+| q this round | 0.01 BTC | 1 contract, i.e. 0.01 BTC |
+| Fees | Scenario: 10 bps per trade | Scenario: 5 bps per trade |
+| Fee currency | Assumed USDT in the model; real rules not verified | Assumed USDT in the model; account tier not verified |
 
-费用情景不表示标准费率、VIP优惠或可用返佣。最小名义限制、历史有效期、保证金梯度、费币和账户资格尚未完整核验；真实下单不在范围内。
+The fee scenarios do not represent standard fee rates, VIP discounts, or available rebates. Minimum notional limits, historical validity periods, margin tiers, fee currency, and account eligibility have not been fully verified; placing real orders is out of scope.
 
-实际取得的该日资金费结算时刻为00:00、08:00、16:00 UTC，realizedRate分别约0.0000668879、0.0000753334、0.0000685722。这是实际费率，不是之前已知的预测值。接口不包含本次需要的结算参考价格，跨点交易暂不运行；不能统一用八小时线性摊算。
+The funding settlement times actually obtained for that day are 00:00, 08:00, and 16:00 UTC, with realizedRate of approximately 0.0000668879, 0.0000753334, and 0.0000685722 respectively. These are realized rates, not predicted values that were known beforehand. The interface does not include the settlement reference price needed here, so trades that cross a settlement point are not run for now; the rate must not be spread linearly over eight hours.
 
-本轮实际下载：23日两腿400档盘口；23和24日两腿成交，满足UTC全天需要的相邻UTC+8文件。全部压缩文件606,258,642字节，约606.3十进制MB或578.2MiB。只有前两小时盘口被逐条解析，余下内容未宣称质量通过。
+Actually downloaded this round: the 400-level order books of both legs for the 23rd; the trades of both legs for the 23rd and 24th, which are the adjacent UTC+8 files needed to cover the full UTC day. All compressed files total 606,258,642 bytes, about 606.3 decimal MB or 578.2 MiB. Only the first two hours of the order book were parsed event by event; the quality of the remaining content is not claimed to have passed.
 
-官方文档核验：历史接口module1/4、日界和发布延迟仍与prompt主要描述一致；当前额外有module11借贷费率。普通books的checksum已标为deprecated、固定0，序列应检查seqId/prevSeqId。**本次历史档案没有这些字段**，不能用实时协议说明替它补出证据。档案三列价位与WebSocket格式也不同。
+Official documentation check: the historical-data endpoints (module 1/4), the day boundaries, and the publication delay are still consistent with the main description in the prompt; there is currently an additional module 11 for borrow rates. The checksum of the regular books channel is marked deprecated and fixed at 0, and sequence should be checked via seqId/prevSeqId. **This historical archive does not have these fields**, and the live-protocol documentation cannot be used to supply evidence for it. The three-column price levels also differ from the WebSocket format.
 
-当前官方REST trade source=1说明是RPI（旧ELP）。本次成交档案确有source=1，保留并统计；pressure含全部source，尚未把该字段的档案可访问性映射验证完毕。盘口撮合不借成交记录补充流动性。
+The current official REST documentation describes trade source=1 as RPI (formerly ELP). The trade archive for this run does contain source=1, which is kept and counted; pressure includes all sources, and the mapping of whether this field's liquidity is accessible in the archive has not yet been verified. Order book matching does not borrow liquidity from the trade records.
 
-核验入口：[历史数据](https://www.okx.com/historical-data)、[API文档](https://www.okx.com/docs-v5/en/)、[变更记录](https://www.okx.com/docs-v5/log_en/)。档案清单与合约响应是实际访问证据，而非仅引用入口。未创建API密钥，未购买或使用真实订单接口。
+Verification entry points: [Historical data](https://www.okx.com/historical-data), [API docs](https://www.okx.com/docs-v5/en/), [Changelog](https://www.okx.com/docs-v5/log_en/). The archive listing and the contract responses are the actual access evidence, not merely the cited entry points. No API key was created, and no real order interface was purchased or used.
+
+---
