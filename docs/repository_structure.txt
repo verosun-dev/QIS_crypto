@@ -1,0 +1,175 @@
+QIS CRYPTO — REPOSITORY MAP
+Repository guide · 30 October 2026
+
+Purpose
+  Build one reproducible spot–perpetual research pipeline shared by the four
+  workstreams. Each source directory below contains implemented logic. Future
+  work is listed separately at the end, rather than represented by empty files.
+
+Current runnable scope
+  OKX BTC-USDT + BTC-USDT-SWAP; positive-basis V0; visible-depth taker replay.
+  Two-hour engineering debug with a 30-minute warm-up. The proposed weekly V0.1
+  experiment and 24-hour reference are not implemented by this refactor.
+
+1. IMPLEMENTED REPOSITORY
+
+QIS_crypto/
+│
+├── README.md                         Project purpose, reading route, reproduction
+├── CONTRIBUTING.md                   Module boundaries, tests, review expectations
+├── Makefile                          test / demo / replay / manifest commands
+├── pyproject.toml                    Package metadata and stable `qis` entry point
+├── requirements-optional.txt         Plotting and public-capture dependencies
+├── .gitignore                        Raw data, large tables, caches, temp files
+│
+├── configs/
+│   ├── README.md                     Parameter groups and current limitations
+│   └── debug.json                    Complete resolved debug experiment config
+│
+├── docs/
+│   ├── repository_structure.txt      This annotated map, adapted from message.txt
+│   ├── architecture.md               Data flow, interfaces, workstreams, migration
+│   ├── refactor_validation.md        Behavior comparison and test evidence
+│   ├── project_explained.md           Strategy economics and worked cash-flow example
+│   ├── reading_map.md                Nineteen readings and four reading routes
+│   ├── team_workstreams.md           Concrete tasks and handoffs for A/B/C/D
+│   ├── baseline_spec.md              Exact rules implemented in the debug
+│   ├── baseline_review.md            Proposed V0.1: strengths and decisions pending
+│   ├── instrument_spec.md            Pair, contract units, and rule assumptions
+│   ├── data_dictionary.md            Fields, units, availability, output definitions
+│   └── first_run_results.md          Historical debug findings and limitations
+│
+├── src/
+│   └── qis_spot_perp/
+│       ├── __init__.py
+│       ├── README.md                 GitHub source navigation and starting points
+│       ├── cli.py                    Parse command line; dispatch experiment/manifest
+│       │
+│       ├── core/
+│       │   └── instruments.py        Validate matched BTC exposure and contract lots
+│       │
+│       ├── data/
+│       │   ├── archives.py           UTC/UTC+8 calendars; stream original L2 events
+│       │   ├── orderbook.py          Rebuild depth; sequence, price, and age checks
+│       │   ├── trades.py             Deduplicate trade IDs; aggregate minute notionals
+│       │   └── manifests.py          Record provenance, sizes, and local fingerprints
+│       │
+│       ├── features/
+│       │   ├── basis.py              Basis, trailing-median excess, 60-second momentum
+│       │   └── order_flow.py         Trade pressure and relative decay; no OFI yet
+│       │
+│       ├── strategies/
+│       │   └── basis_threshold.py    V0 signal eligibility and first rejection reason
+│       │
+│       ├── execution/
+│       │   └── taker.py              Consume arrival-time depth; return partial fills
+│       │
+│       ├── risk/
+│       │   └── controls.py           Funding-crossing gate and known-account loss check
+│       │
+│       ├── backtest/
+│       │   ├── runner.py             Connect config, manifests, input streams, outputs
+│       │   ├── engine.py             Queue, latency, paired lifecycle, reports, recovery
+│       │   └── accounting.py         Inventory, signed cash flows, fees, funding, marks
+│       │
+│       ├── evaluation/
+│       │   ├── metrics.py            Debug P&L/drawdown and unresolved-exposure summary
+│       │   └── splits.py             Purge labels crossing a chronological boundary
+│       │
+│       └── reporting/
+│           └── artifacts.py          Save CSV/JSON tables and experiment provenance
+│
+├── scripts/
+│   ├── fetch_sample.py               Inspect/download bounded public sample
+│   ├── check_archives.py             Check compression integrity
+│   ├── collect_public.py             Bounded public capture; no order connection
+│   ├── synthetic_demo.py             Generate explicitly labeled teaching scenario
+│   └── plot_debug.py                 Plot saved basis/equity diagnostics
+│
+├── tests/
+│   ├── fixtures/
+│   │   └── market.py                 Small synthetic books and replay settings
+│   ├── unit/
+│   │   ├── test_accounting.py        P&L identity, fees, funding signs
+│   │   ├── test_archive_dates.py     UTC and UTC+8 file coverage
+│   │   ├── test_execution.py         Contract mapping, depth consumption, partial fills
+│   │   ├── test_features.py          Causality, warm-up, pressure availability, purge
+│   │   ├── test_orderbook.py         Snapshots, absolute updates, gaps, sequence status
+│   │   └── test_strategy.py          Threshold boundaries, rejection order, episode gate
+│   └── integration/
+│       ├── test_trade_archives.py    Small ZIP/CSV input through deduplication
+│       └── test_baseline_run.py      Latency, changed quotes, recovery, end exposure
+│
+├── data/
+│   ├── README.md                     Download commands, coverage, storage policy
+│   └── manifests/                    Small tracked source and integrity records
+│
+└── outputs/
+    ├── experiment_register.jsonl     Existing experiment log, appended by runner
+    ├── validation.txt                Historical first-run test output
+    ├── synthetic_demo/               Labeled synthetic orders, fills, and trade example
+    └── okx_20261023_debug_v0/         Recorded real-data debug
+        ├── experiment.json           Configuration, source fingerprint, summary
+        ├── config.json               Resolved run settings
+        ├── data_quality_report.json  Coverage, sequences, duplicates, rejections
+        ├── summary.json              Metrics and explicit limitations
+        ├── orders.csv                Send/arrival/report times and order status
+        ├── fills.csv                 Actual simulated fills and fees
+        ├── trades.csv                Closed episode cash-flow decomposition
+        ├── states.csv                Position lifecycle transitions
+        ├── pressure.csv              Completed-minute diagnostics, unused by V0
+        └── basis.png                 Chart from the recorded debug
+
+Package/test __init__.py files are omitted below the first level for readability.
+Ignored local artifacts include data/raw/, tmp/, and each run's large features.csv
+and equity.csv. data/processed/ is reserved and ignored; the current runner streams
+archives directly. Not all of outputs/ is ignored: selected small reports are tracked.
+
+2. WORKSTREAM BOUNDARIES
+
+A · Data                  data/ + acquisition scripts
+    Deliver timestamped streams, contract metadata, provenance, and quality checks.
+B · Signals               features/ + strategies/
+    Deliver causal feature definitions and signal eligibility rules.
+C · Backtest/validation   backtest/ + evaluation/ + reporting/
+    Deliver an auditable event lifecycle, accounting, experiment, and result tables.
+D · Execution/risk        core/ + execution/ + risk/ + shared accounting review
+    Deliver quantity validation, fill assumptions, fee/funding rules, recovery checks.
+
+Each group changes the same pipeline. Signal modules do not invent fills; execution
+modules do not redefine the strategy; accounting owns the shared cash-flow identity.
+
+3. NEXT ADDITIONS — NOT IMPLEMENTED FILES
+
+Priority 1 · Make the proposed V0.1 experiment executable
+  - Add multi-day iteration and snapshot continuity in data/ and backtest/runner.py.
+  - Freeze the missing-data policy for a genuine 24-hour reference.
+  - Verify funding inputs, historical rules, and coverage through the exit buffer.
+  - Save a separate resolved experiment configuration and result record.
+
+Priority 2 · Evaluate the fixed baseline, then one signal addition
+  - Add chronological experiment splits and cost/latency sensitivity in evaluation/.
+  - Implement a single pressure-based filter in strategies/ after defining its test.
+  - Add uncertainty estimates that respect dependent observations and episodes.
+
+Priority 3 · Add infrastructure when there is a concrete use
+  - CI and reviewer ownership after agreeing team workflow and GitHub identities.
+  - Composed configuration when multiple real experiments need shared settings.
+  - Parquet storage when repeated analysis justifies materialized datasets.
+  - Notebooks for specific analyses, with reusable logic kept in the package.
+  - Maker/paper execution only as a separately specified and tested extension.
+
+4. HOW TO READ THIS PROJECT
+
+New member       README -> project_explained -> team_workstreams
+Contributor      source README -> architecture -> relevant module and tests
+Baseline review  baseline_spec (implemented) -> baseline_review (proposed next stage)
+Run review       config -> data_quality_report -> orders/fills/trades -> summary
+
+Commands from the repository root:
+  make test
+  make demo
+  make replay CONFIG=configs/debug.json
+
+The CLI and package name remain unchanged. See architecture.md for old-to-new import
+locations and timing contracts.

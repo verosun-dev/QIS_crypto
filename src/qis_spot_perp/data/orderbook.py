@@ -1,4 +1,4 @@
-"""Absolute-size L2 reconstruction. Decimal prices/sizes retain source precision."""
+"""Absolute-size L2 reconstruction; prices and BTC sizes retain Decimal precision."""
 from decimal import Decimal as D
 
 
@@ -66,30 +66,3 @@ class Book:
 
     def mid(self):
         return (max(self.bids) + min(self.asks)) / 2
-
-    def sweep(self, side, quantity):
-        """Visible-depth IOC; mutates this simulation book, never invents liquidity."""
-        levels = self.asks if side == "buy" else self.bids
-        remaining, fills = D(quantity), []
-        for price in sorted(levels, reverse=side == "sell"):
-            qty = min(remaining, levels[price])
-            if qty:
-                fills.append((price, qty))
-                levels[price] -= qty
-                if not levels[price]: del levels[price]
-                remaining -= qty
-            if not remaining: break
-        return fills, remaining
-
-
-def matched_units(q, spot_spec, perp_spec):
-    q = D(q)
-    if perp_spec["ctType"] != "linear" or perp_spec["ctValCcy"] != spot_spec["baseCcy"]:
-        raise ValueError("unsupported exposure mapping")
-    if spot_spec["quoteCcy"] != perp_spec["settleCcy"]:
-        raise ValueError("quote/settlement mismatch")
-    contracts = q / (D(perp_spec["ctVal"]) * D(perp_spec.get("ctMult") or "1"))
-    for value, spec in ((q, spot_spec), (contracts, perp_spec)):
-        if value < D(spec["minSz"]) or value % D(spec["lotSz"]):
-            raise ValueError("quantity violates lot/minimum size")
-    return q, contracts

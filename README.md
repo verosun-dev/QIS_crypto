@@ -12,7 +12,7 @@ The first run downloaded free public OKX archives and completed a **two-hour eng
 4. [First-run results](docs/first_run_results.md), [machine-readable summary](outputs/okx_20261023_debug_v0/summary.json), and [basis chart](outputs/okx_20261023_debug_v0/basis.png).
 5. [Baseline review](docs/baseline_review.md): the English review of the proposed V0.1 specification, including decisions still needed before implementation.
 
-The [implemented debug specification](docs/baseline_spec.md) describes the current code. The proposed one-week V0.1 experiment is **not implemented or completed** by this documentation update.
+The [implemented debug specification](docs/baseline_spec.md) describes the current code. The proposed one-week V0.1 experiment is **not implemented or completed** by the current debug or source reorganization.
 
 ## Run locally
 
@@ -68,15 +68,21 @@ It subscribes only to `books` and `trades`, defaults to 30 seconds, and limits c
 
 ## Code and specifications
 
-| File | Responsibility |
+Browse the [source guide](src/qis_spot_perp/README.md), [annotated repository tree](docs/repository_structure.txt), and [architecture](docs/architecture.md) for module interfaces and workstream handoffs.
+
+| Package | Responsibility |
 |---|---|
-| `src/qis_spot_perp/data.py` | Streaming archives, UTC boundaries, trade-ID deduplication, pressure, SHA256 |
-| `src/qis_spot_perp/book.py` | Decimal L2 reconstruction, sequence handling, visible-depth IOC matching |
-| `src/qis_spot_perp/features.py` | Causal rolling basis, momentum, trade pressure, basic timestamp purge |
-| `src/qis_spot_perp/replay.py` | Exchange, observed, and reported states; latency; partial-fill recovery |
-| `src/qis_spot_perp/accounting.py` | Fill cash flows, inventory, per-fill fees, funding direction |
-| `configs/debug.json` | Debug parameters and limitations |
-| `tests/test_research.py` | Hand calculations, sequencing, timing, latency, partial fills, data boundaries |
+| `core/` | Matched BTC exposure, contract units, and lot validation |
+| `data/` | Streaming archives, order books, trade deduplication, provenance |
+| `features/` | Causal basis, momentum, completed-minute trade pressure |
+| `strategies/` | V0 signal eligibility and rejection reasons |
+| `execution/` | Arrival-time visible-depth IOC fills |
+| `risk/` | Funding admission and reported-account loss checks |
+| `backtest/` | Event scheduling, order lifecycle, recovery, and fill accounting |
+| `evaluation/` | Debug metrics and chronological label purge |
+| `reporting/` | Tables, quality reports, and experiment records |
+
+All nine packages are under `src/qis_spot_perp/`. Tests are organized into `tests/unit/`, `tests/integration/`, and shared `tests/fixtures/`. Run `make test`; `make replay` uses `configs/debug.json`. See [configuration fields](configs/README.md), [contribution workflow](CONTRIBUTING.md), and [refactor verification](docs/refactor_validation.md).
 
 See the [baseline specification](docs/baseline_spec.md), [instrument specification](docs/instrument_spec.md), and [data dictionary](docs/data_dictionary.md). Download URLs, sizes, and SHA256 fingerprints are in `data/manifests/downloads.json`. Recorded commands, parameters, and source fingerprints are in `outputs/experiment_register.jsonl`.
 

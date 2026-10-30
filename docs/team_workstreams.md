@@ -2,6 +2,8 @@
 
 All workstreams share configurations, raw-data manifests, instrument units, and one fill/accounting ledger. Changes to unit matching, timing, or fee currencies must be reflected in the shared specification and a new experiment record.
 
+Module locations below are relative to `src/qis_spot_perp/`. See the [architecture](architecture.md) for interfaces and the full source map.
+
 ## A — Data and order-book reconstruction
 
 **Where do trades come from, and must we buy data?** The first run downloaded real OKX public archives without payment or an API key. Run `python3 scripts/fetch_sample.py --date 2026-10-23` to inspect files and sizes. Add `--download --max-mb 700` to download, with a 180-second limit per file. The actual total is about 606.3 MB; the provider's `sizeMB` values are closer to MiB, so do not treat them as decimal MB. Uncompressed data exceeds 3 GB; the code streams it without extracting everything to disk. List and budget longer ranges in bounded segments.
@@ -12,13 +14,13 @@ A daily file can contain millions of trades; it is not a daily candle. Candles h
 
 Select markets by matching underlying and settlement currency, overlapping coverage, timing quality, depth, fees, and documented rules. BTC is an engineering starting choice. ETH can be a later external check; do not choose assets by retrospective profitability. Binance official archives are a possible alternative for mechanism screening, but switching sources means switching both legs and recording a new experiment. Consider paid L2 only after identifying a specific gap free sources cannot resolve.
 
-`data.py` streams archives, filters UTC intervals, and deduplicates by trade ID. `book.py` replaces absolute quantities, deletes zero-size levels, and retains deeper levels. Historical files here lack sequence IDs, so they cannot prove message completeness. Live collection should retain raw messages, exchange timestamps, local UTC receipt timestamps, and arrival order. An unchanged quote is not by itself a disconnect; inspect heartbeats and connection health.
+`data/archives.py` and `data/trades.py` stream archives, filter UTC intervals, and deduplicate by trade ID. `data/orderbook.py` replaces absolute quantities, deletes zero-size levels, and retains deeper levels. Historical files here lack sequence IDs, so they cannot prove message completeness. Live collection should retain raw messages, exchange timestamps, local UTC receipt timestamps, and arrival order. An unchanged quote is not by itself a disconnect; inspect heartbeats and connection health.
 
 First-week deliverables: a continuous-week manifest, data dictionary, missing intervals, cross-leg timing and available receipt-latency evidence, `source=1` trade counts, and sequence-check results. Report unavailable evidence explicitly.
 
 ## B — Spread analysis and signals
 
-`features.py` implements basis, excess over a trailing median, and 60-second momentum. `pressure.csv` contains both legs' completed-minute aggressive-notional pressure and its relative decay. V0 does not use pressure.
+`features/basis.py` implements basis, excess over a trailing median, and 60-second momentum. `pressure.csv` contains both legs' completed-minute aggressive-notional pressure and its relative decay. V0 does not use pressure.
 
 Fix quantity and holding rules on development data. Study a small, predetermined set of horizons such as 1 second, 10 seconds, 1 minute, 5 minutes, and 30 minutes. Within comparable starting-excess bands, compare convergence and adverse widening when pressure strengthens or weakens. Retain events that do not converge. Add feed delay to a minute feature's `available_exchange_ms` before treating it as locally known.
 
@@ -34,7 +36,7 @@ V1 adds only weakening relative pressure. V2 separately adds momentum. V3 can ap
 
 ## C — Backtesting and statistical validation
 
-`replay.py` handles exchange updates, observed messages, order arrivals, and execution reports. `accounting.py` maintains actual fill quantities, fees, and cash-flow identities. Start with `PYTHONPATH=src python3 -m unittest discover -s tests -v`, inspect the synthetic order/fill/trade trace, then audit real-data outputs.
+`backtest/engine.py` handles exchange updates, observed messages, order arrivals, and execution reports. `backtest/accounting.py` maintains actual fill quantities, fees, and cash-flow identities. Start with `PYTHONPATH=src python3 -m unittest discover -s tests -v`, inspect the synthetic order/fill/trade trace, then audit real-data outputs.
 
 A signal requests orders; it does not change accounting rules. Retain decision, send, arrival, fill, and report times. Keep partial fills, failed orders, and recovery costs. Report outstanding positions at the data boundary. Show returns relative to entry spot notional and total allocated capital separately.
 

@@ -1,3 +1,4 @@
+"""Signed fill cash flows, fees, funding, and inventory valuation in USDT."""
 from dataclasses import dataclass, field
 from decimal import Decimal as D
 
@@ -31,8 +32,3 @@ class Account:
 
     def equity_pnl(self, spot_mark, perp_mark):
         return self.cash_pnl + self.positions["spot"]*D(spot_mark) + self.positions["perp"]*D(perp_mark)
-
-
-def funding_in_interval(start, end, settlements):
-    # Conservative ties: block boundaries too, because cross-feed ordering is unknown.
-    return [x for x in settlements if start <= int(x["fundingTime"]) <= end]

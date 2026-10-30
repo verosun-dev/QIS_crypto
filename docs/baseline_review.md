@@ -27,7 +27,7 @@ The recommendations intentionally leave the core entry, quantity, and holding pa
 
 ## Implementation gap
 
-The current [configuration](../configs/debug.json) uses a 30-minute reference and a two-hour sample. The [CLI](../src/qis_spot_perp/cli.py) reads one dated book archive per leg. Implementing the proposed week therefore requires multi-day file iteration, continuity and warm-up across midnight, and appropriate tail coverage. Changing dates alone is insufficient.
+The current [configuration](../configs/debug.json) uses a 30-minute reference and a two-hour sample. The [experiment runner](../src/qis_spot_perp/backtest/runner.py) reads one dated book archive per leg. Implementing the proposed week therefore requires multi-day file iteration, continuity and warm-up across midnight, and appropriate tail coverage. Changing dates alone is insufficient.
 
 The current funding path also restricts planned settlement crossings rather than applying complete settlement cash flows. This should be a named scope restriction in the weekly experiment, not an implicit discrepancy between the document and code.
 

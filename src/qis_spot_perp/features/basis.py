@@ -1,3 +1,4 @@
+"""Trailing basis median and momentum, excluding the current point from history."""
 from collections import deque
 from bisect import bisect_left, insort
 
@@ -23,13 +24,3 @@ class Features:
                   "momentum_60s_bps":None if lag is None else b-lag, "warm":complete}
         self.history.append((t,b)); insort(self.sorted_basis,b)
         return result
-
-
-def trade_pressure(buy_notional, sell_notional, minimum=0):
-    total = buy_notional+sell_notional
-    return None if total <= minimum else (buy_notional-sell_notional)/total
-
-
-def purged_split(events, boundary):
-    """Timestamp-based exclusion of labels crossing a chronological boundary."""
-    return [e for e in events if e["decision_ms"] < boundary and e["label_end_ms"] < boundary]

@@ -6,9 +6,13 @@ sequence completeness and historical account margin rules are not established.
 import heapq
 from collections import Counter
 from decimal import Decimal as D
-from .accounting import Account, funding_in_interval, paired_gross
-from .book import Book
-from .features import Features
+from .accounting import Account, paired_gross
+from ..data.orderbook import Book
+from ..features.basis import Features
+from ..strategies.basis_threshold import entry_rejection
+from ..execution.taker import sweep
+from ..risk.controls import entry_crosses_funding, loss_limit_hit
+from ..evaluation.metrics import summarize
 
 
 class Replay:
@@ -55,7 +59,7 @@ class Replay:
     def arrive(self,t,o):
         b=self.exchange[o['leg']]
         if b.healthy(t,self.c['max_stale_ms']):
-            rows,remaining=b.sweep(o['side'],o['quantity_btc'])
+            rows,remaining=sweep(b,o['side'],o['quantity_btc'])
         else:
             rows,remaining=[],D(o['quantity_btc'])
         fee_bps=self.c['spot_fee_bps' if o['leg']=='spot' else 'perp_fee_bps']
@@ -134,16 +138,17 @@ class Replay:
         x=f['excess_bps']
         if x is not None and x<=0:self.armed=True
         if self.state=='HEDGED':
-            known_pnl=self.known.equity_pnl(s,p)-D(self.current['start_cash'])
-            if known_pnl <= -D(self.c['max_pair_loss_usdt']):self.close(t,'observed_loss_limit')
+            if loss_limit_hit(self.known,self.current['start_cash'],s,p,self.c['max_pair_loss_usdt']):
+                self.close(t,'observed_loss_limit')
         if self.halted or self.state!='FLAT' or self.pending:return
         if not self.c['entry_start_ms']<=t<self.c['entry_end_ms']:return
-        if x is None:self.rejects['warmup_incomplete']+=1;return
-        if f['basis_bps']<=0:self.rejects['nonpositive_basis']+=1;return
-        if x<self.c['threshold_bps']:self.rejects['below_threshold']+=1;return
-        if not self.armed:self.rejects['episode_not_reset']+=1;return
-        end=t+self.c['holding_ms']+2*self.c['order_latency_ms']+2*self.c['report_latency_ms']+self.c['recovery_timeout_ms']
-        if funding_in_interval(t,end,self.funding):self.rejects['funding_reference_unavailable']+=1;return
+        rejection = entry_rejection(f, self.c['threshold_bps'], self.armed)
+        if rejection:
+            self.rejects[rejection] += 1
+            return
+        if entry_crosses_funding(t, self.c, self.funding):
+            self.rejects['funding_reference_unavailable'] += 1
+            return
         self.episode+=1;self.armed=False
         self.current=dict(episode_id=self.episode,decision_ms=t,entry_spot_mid=str(s),entry_perp_mid=str(p),
                           basis_bps=f['basis_bps'],excess_bps=x,start_cash=str(self.actual.cash_pnl),
@@ -187,24 +192,4 @@ class Replay:
         return self
 
     def summary(self):
-        pnl=[D(r['net_usdt']) for r in self.trades]
-        eq=[D(x['equity_usdt']) for x in self.equity]
-        peak=D(self.c['initial_capital_usdt']);drawdown=D(0)
-        for value in eq:peak=max(peak,value);drawdown=max(drawdown,peak-value)
-        unresolved=bool(self.pending or any(self.actual.positions.values()))
-        return dict(data_kind=self.c['data_kind'],status='INCOMPLETE' if unresolved or self.unknown_funding else 'COMPLETED_DEBUG',
-                    closed_trades=len(pnl),episodes=self.episode,orders=len(self.orders),fills=len(self.fills),
-                    gross_fill_usdt=str(sum((D(r['gross_fill_usdt']) for r in self.trades),D(0))),
-                    fees_usdt=str(self.actual.fees),funding_usdt=None if self.unknown_funding else str(self.actual.funding),
-                    closed_net_usdt=None if self.unknown_funding else str(sum(pnl,D(0))),
-                    return_on_total_capital=None if self.unknown_funding else str(sum(pnl,D(0))/D(self.c['initial_capital_usdt'])),
-                    win_rate=None if not pnl else sum(x>0 for x in pnl)/len(pnl),
-                    worst_trade_usdt=str(min(pnl)) if pnl else None,max_drawdown_usdt=str(drawdown),
-                    end_positions={k:str(v) for k,v in self.actual.positions.items()},pending_orders=sorted(self.pending),
-                    end_state=self.state,rejections=dict(self.rejects),book_health=dict(self.book_health),
-                    limitations=['2-hour debug; shortened warmup','No archive sequence IDs or local receipt timestamps',
-                                 'Illustrative fees and latency; quote-currency fee assumption',
-                                 'Current metadata, historical rule equivalence unverified',
-                                 'No margin liquidation model; cannot validate leveraged safety',
-                                 'Funding crossings blocked absent settlement reference price',
-                                 'No out-of-sample or profitability conclusion'])
+        return summarize(self)
