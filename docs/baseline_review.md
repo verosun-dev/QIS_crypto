@@ -4,7 +4,7 @@ The four-page `QIS_Baseline_v0_1.pdf`, supplied for review on 30 October 2026, i
 
 This is an English version of the review and its recommendations. It does not record team approval of those recommendations, change the implemented debug configuration, or claim that the proposed weekly experiment has run. The supplied PDF is not included in this repository.
 
-## What is already clear
+## What is already clear a
 
 Page 1 specifies the venue, instruments, direction, matched quantity, entry signal, holding period, cost scenarios, and proposed research dates. Those choices define a useful baseline. Page 3 correctly separates the earlier two-hour debug from the next experiment and does not present zero trades as strategy validation.
 
