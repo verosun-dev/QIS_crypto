@@ -1,4 +1,4 @@
-# Experiment configuration
+# Experiment configuration TEST PUSH
 
 [`debug.json`](debug.json) is the complete, resolved configuration for the current two-hour debug. The runner copies it into each experiment output. It uses a 30-minute warm-up; it is not the proposed 24-hour-reference experiment.
 
