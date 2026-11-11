@@ -61,8 +61,8 @@ class Book:
         return self.reason
 
     def healthy(self, now, max_age):
-        return (self.valid and 0 <= now - self.ts <= max_age and self.bids and self.asks
-                and max(self.bids) < min(self.asks))
+        return bool(self.valid and 0 <= now - self.ts <= max_age and self.bids and self.asks
+                    and max(self.bids) < min(self.asks))
 
     def mid(self):
         return (max(self.bids) + min(self.asks)) / 2

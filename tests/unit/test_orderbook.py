@@ -27,3 +27,30 @@ class OrderBookTests(unittest.TestCase):
         b=Book();b.apply(e);self.assertFalse(b.valid)
         b=Book(allow_unsequenced=True);b.apply(e)
         self.assertTrue(b.valid);self.assertFalse(b.sequence_verified)
+
+    def test_out_of_order_message_invalidates_until_snapshot(self):
+        b=Book();b.apply(event(10,seq=20))
+        self.assertEqual(b.apply(event(9,action='update',seq=21,prev=20)),'out_of_order')
+        self.assertFalse(b.valid)
+        self.assertEqual(b.apply(event(11,action='update',seq=21,prev=20)),'awaiting_snapshot')
+        self.assertEqual(b.apply(event(12,seq=50)),'ok')
+        self.assertTrue(b.valid)
+        self.assertEqual(b.seq,50)
+
+    def test_healthy_checks_staleness_and_age_boundaries(self):
+        b=Book();b.apply(event(100))
+        self.assertTrue(b.healthy(100,50))
+        self.assertTrue(b.healthy(150,50))
+        self.assertFalse(b.healthy(151,50))
+        self.assertFalse(b.healthy(99,50))
+        self.assertEqual(b.apply(dict(ts='151',bids=[],asks=[],action='update',
+                                      seqId=1,prevSeqId=1)),'ok')
+        self.assertTrue(b.healthy(151,0))
+
+    def test_healthy_is_false_for_empty_or_crossed_books(self):
+        empty=Book()
+        empty.apply(dict(ts='0',bids=[],asks=[['101','1']],action='snapshot',
+                         seqId=1,prevSeqId=-1))
+        self.assertIs(empty.healthy(0,100),False)
+        crossed=Book();crossed.apply(event(0,bid='102',ask='101'))
+        self.assertIs(crossed.healthy(0,100),False)
