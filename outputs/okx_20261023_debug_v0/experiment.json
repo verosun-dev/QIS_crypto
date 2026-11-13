@@ -3,8 +3,9 @@
   "hypothesis": "Abnormally positive basis converges within 30 minutes",
   "phase": "development_debug",
   "command": "PYTHONPATH=src python3 -m qis_spot_perp.cli run --config configs/debug.json",
-  "python": "3.14.2 (v3.14.2:df793163d58, Dec  5 2025, 12:18:06) [Clang 16.0.0 (clang-1600.0.26.6)]",
-  "source_sha256": "b19f4577c2cde27ce19ae0d6f7dbf5773ffc1a8b2bdec6af11f24c402a7a9f1f",
+  "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]",
+  "source_sha256": "6370e7f571f79babc237ba0f1679433bf07b05c299e31ff2cbffaaf888f74888",
+  "source_hash_scheme": "relative_path_and_content_v2",
   "config": {
     "experiment_id": "okx_20261023_debug_v0",
     "data_kind": "real_archive_exchange_time_replay",

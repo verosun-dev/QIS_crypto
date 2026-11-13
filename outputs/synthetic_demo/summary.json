@@ -1,6 +1,7 @@
 {
   "data_kind": "SYNTHETIC_TEACHING_ONLY",
   "status": "COMPLETED_DEBUG",
+  "incomplete_reasons": [],
   "closed_trades": 1,
   "episodes": 1,
   "orders": 4,

@@ -1,0 +1,37 @@
+[
+  {
+    "url": "https://www.okx.com/api/v5/public/instruments?instType=SPOT&instId=BTC-USDT",
+    "retrieved_at_utc": "2026-11-13T21:25:44.977045+00:00",
+    "file": "data/manifests/2026-10-23/okx-spot-spec.json"
+  },
+  {
+    "url": "https://www.okx.com/api/v5/public/market-data-history?module=1&instType=SPOT&instIdList=BTC-USDT&dateAggrType=daily&begin=1792713600000&end=1792800000000",
+    "retrieved_at_utc": "2026-11-13T21:25:45.874944+00:00",
+    "file": "data/manifests/2026-10-23/okx-spot-trades.json"
+  },
+  {
+    "url": "https://www.okx.com/api/v5/public/market-data-history?module=4&instType=SPOT&instIdList=BTC-USDT&dateAggrType=daily&begin=1792713600000&end=1792713600000",
+    "retrieved_at_utc": "2026-11-13T21:25:46.668747+00:00",
+    "file": "data/manifests/2026-10-23/okx-spot-books.json"
+  },
+  {
+    "url": "https://www.okx.com/api/v5/public/instruments?instType=SWAP&instId=BTC-USDT-SWAP",
+    "retrieved_at_utc": "2026-11-13T21:25:47.463596+00:00",
+    "file": "data/manifests/2026-10-23/okx-swap-spec.json"
+  },
+  {
+    "url": "https://www.okx.com/api/v5/public/market-data-history?module=1&instType=SWAP&instFamilyList=BTC-USDT&dateAggrType=daily&begin=1792713600000&end=1792800000000",
+    "retrieved_at_utc": "2026-11-13T21:25:48.262268+00:00",
+    "file": "data/manifests/2026-10-23/okx-swap-trades.json"
+  },
+  {
+    "url": "https://www.okx.com/api/v5/public/market-data-history?module=4&instType=SWAP&instFamilyList=BTC-USDT&dateAggrType=daily&begin=1792713600000&end=1792713600000",
+    "retrieved_at_utc": "2026-11-13T21:25:49.060651+00:00",
+    "file": "data/manifests/2026-10-23/okx-swap-books.json"
+  },
+  {
+    "url": "https://www.okx.com/api/v5/public/funding-rate-history?instId=BTC-USDT-SWAP&before=1792713599999&after=1792800000000&limit=100",
+    "retrieved_at_utc": "2026-11-13T21:25:49.855208+00:00",
+    "file": "data/manifests/2026-10-23/okx-funding.json"
+  }
+]

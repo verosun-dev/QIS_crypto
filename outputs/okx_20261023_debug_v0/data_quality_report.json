@@ -8,7 +8,7 @@
     "first_ms": 1792713600002,
     "last_ms": 1792720799997,
     "scope": "requested prefix only",
-    "source_file": "/Users/veronicasun/Documents/ChatGPT/QIS crypto/data/raw/BTC-USDT-L2orderbook-400lv-2026-10-23.tar.gz"
+    "source_file": "/home/ybg/Programming/brajumich-github/QIS_crypto/data/raw/BTC-USDT-L2orderbook-400lv-2026-10-23.tar.gz"
   },
   "perp": {
     "rows": 619418,
@@ -19,7 +19,7 @@
     "first_ms": 1792713600002,
     "last_ms": 1792720799997,
     "scope": "requested prefix only",
-    "source_file": "/Users/veronicasun/Documents/ChatGPT/QIS crypto/data/raw/BTC-USDT-SWAP-L2orderbook-400lv-2026-10-23.tar.gz"
+    "source_file": "/home/ybg/Programming/brajumich-github/QIS_crypto/data/raw/BTC-USDT-SWAP-L2orderbook-400lv-2026-10-23.tar.gz"
   },
   "trades": {
     "spot": {
