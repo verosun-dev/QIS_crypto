@@ -38,14 +38,16 @@ List the files and sizes before downloading:
 ```bash
 python3 scripts/fetch_sample.py --date 2026-10-23
 python3 scripts/fetch_sample.py --date 2026-10-23 --download --max-mb 700
-python3 scripts/check_archives.py
-PYTHONPATH=src python3 -m qis_spot_perp.cli manifest
-PYTHONPATH=src python3 -m qis_spot_perp.cli run --config configs/debug.json
+PYTHONPATH=src python3 -m qis_spot_perp.cli manifest --date 2026-10-23
 ```
 
 No API key is needed for these public requests. The six downloaded archives total 606,258,642 bytes. Raw files are excluded from Git; the repository includes download scripts, manifests, checksums, and small reports. Coverage must still be checked when rerunning against the provider.
 
-The downloader handles one UTC research day for this pair. It includes adjacent trade-file dates where required by UTC+8 archive boundaries. Preserve date-specific manifests before extending acquisition: current metadata filenames are reused. Existing archives are retained, and failed downloads leave `.part` files for inspection. The replay currently reads one book archive per leg; a multi-day replay requires implementation work, not just a longer date range in the configuration.
+The downloader handles one UTC research day for this pair. It includes adjacent trade-file dates where required by UTC+8 archive boundaries. New source responses and their retrieval log are saved under `data/manifests/YYYY-MM-DD/`, leaving the historical root metadata intact. Repeating a date reuses its complete saved metadata without making metadata requests. Failed metadata retrieval is not published; rerun the command to retry. An incomplete or malformed saved dated folder is rejected rather than overwritten. Existing raw archives are retained, and failed raw downloads leave `.part` files for inspection.
+
+`manifest --date` requires all six raw archives, fingerprints the archives and source responses, and creates an immutable dated `downloads.json`. Repeating it verifies content without rewriting the record; changed input bytes cause an error. Modification-time changes alone do not invalidate a fingerprint. Without `--date`, `manifest` prints a current inspection of legacy inputs without changing the historical `downloads.json`.
+
+The debug replay and experiment records still reference the original root metadata. New dated acquisitions are not yet wired into replay. The replay reads one book archive per leg; multi-day replay requires implementation work, not just a longer date range in the configuration. The legacy `scripts/check_archives.py` also remains separate: it scans all raw archives and rewrites the root `archive_integrity.json`.
 
 A 24-hour lookback needs preceding-day data and correct continuity across midnight. Do not relabel the shortened debug warm-up as a full evaluation.
 
