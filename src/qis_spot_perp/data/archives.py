@@ -5,10 +5,17 @@ from datetime import datetime, timezone, timedelta
 
 
 def utc_ms(value):
-    return int(datetime.fromisoformat(value).replace(tzinfo=timezone.utc).timestamp()*1000)
+    """Parse an ISO timestamp, treating offset-free values as UTC."""
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return int(parsed.timestamp() * 1000)
 
 
 def archive_dates(start_ms, end_ms, module):
+    """Return the archive dates intersecting the half-open interval [start_ms, end_ms)."""
+    if end_ms <= start_ms:
+        return []
     tz = timezone.utc if module in (4,5,6) else timezone(timedelta(hours=8))
     first = datetime.fromtimestamp(start_ms/1000,tz).date()
     last = datetime.fromtimestamp((end_ms-1)/1000,tz).date()

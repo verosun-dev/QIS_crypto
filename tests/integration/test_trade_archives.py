@@ -8,6 +8,14 @@ from qis_spot_perp.data.trades import read_trade_notionals
 
 
 class TradeArchiveTests(unittest.TestCase):
+    def test_empty_interval_requires_no_trade_files(self):
+        start = utc_ms('2026-10-23T12:00:00')
+        with tempfile.TemporaryDirectory() as directory:
+            quality, buckets = read_trade_notionals(directory, start, start, '.01')
+        self.assertEqual(quality['spot']['rows'], 0)
+        self.assertEqual(quality['perp']['rows'], 0)
+        self.assertFalse(buckets)
+
     def test_distinct_trade_ids_at_same_timestamp_retained(self):
         start=utc_ms('2026-10-23');end=start+1000
         with tempfile.TemporaryDirectory() as directory:
